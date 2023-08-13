@@ -1,0 +1,138 @@
+#===============================================================================
+#
+#  Key map (UK keyboard)
+#
+#-------------------------------------------------------------------------------
+#
+#  Each line consists of one or more fields.  Adjacent fields are separated by
+#  one or more consecutive tab characters (U+0009).  The last field of a line is
+#  ignored if it is empty or it starts with '#' (U+0023); all other fields are
+#  significant.  A line that contains no significant fields is ignored;
+#  otherwise, a line must contain either two or three significant fields, which
+#  have the following meaning and form:
+#
+#  Field 1 : a character; either
+#    - the prefix '.' (U+002E) followed by a character literal, or
+#    - the prefix 'U+' followed by four hexadecimal digits.
+#
+#  Field 2 : a key code; either
+#    - the name of a static final field of the java.awt.event.KeyEvent class
+#      that has the prefix 'VK_' (eg, 'VK_EQUALS'), or
+#    - an unsigned decimal integer.
+#
+#  Field 3 (optional) : one or more modifier keys from { shift, control, alt,
+#    meta }.  Adjacent keys are separated by one or more consecutive spaces
+#    (U+0020).
+#
+#-------------------------------------------------------------------------------
+#
+#  This file is formatted with a tab width of 4.
+#
+#===============================================================================
+
+# ASCII characters
+
+. 	VK_SPACE
+.!	VK_1				shift
+."	VK_2				shift
+.#	VK_NUMBER_SIGN
+.$	VK_4				shift
+.%	VK_5				shift
+.&	VK_7				shift
+.'	VK_QUOTE
+.(	VK_9				shift
+.)	VK_0				shift
+.*	VK_8				shift
+.+	VK_EQUALS			shift
+.,	VK_COMMA
+.-	VK_MINUS
+..	VK_PERIOD
+./	VK_SLASH
+.0	VK_0
+.1	VK_1
+.2	VK_2
+.3	VK_3
+.4	VK_4
+.5	VK_5
+.6	VK_6
+.7	VK_7
+.8	VK_8
+.9	VK_9
+.:	VK_SEMICOLON		shift
+.;	VK_SEMICOLON
+.<	VK_COMMA			shift
+.=	VK_EQUALS
+.>	VK_PERIOD			shift
+.?	VK_SLASH			shift
+.@	VK_QUOTE			shift
+.A	VK_A				shift
+.B	VK_B				shift
+.C	VK_C				shift
+.D	VK_D				shift
+.E	VK_E				shift
+.F	VK_F				shift
+.G	VK_G				shift
+.H	VK_H				shift
+.I	VK_I				shift
+.J	VK_J				shift
+.K	VK_K				shift
+.L	VK_L				shift
+.M	VK_M				shift
+.N	VK_N				shift
+.O	VK_O				shift
+.P	VK_P				shift
+.Q	VK_Q				shift
+.R	VK_R				shift
+.S	VK_S				shift
+.T	VK_T				shift
+.U	VK_U				shift
+.V	VK_V				shift
+.W	VK_W				shift
+.X	VK_X				shift
+.Y	VK_Y				shift
+.Z	VK_Z				shift
+.[	VK_OPEN_BRACKET
+.\	VK_BACK_SLASH
+.]	VK_CLOSE_BRACKET
+.^	VK_6				shift
+._	VK_MINUS			shift
+.`	VK_BACK_QUOTE
+.a	VK_A
+.b	VK_B
+.c	VK_C
+.d	VK_D
+.e	VK_E
+.f	VK_F
+.g	VK_G
+.h	VK_H
+.i	VK_I
+.j	VK_J
+.k	VK_K
+.l	VK_L
+.m	VK_M
+.n	VK_N
+.o	VK_O
+.p	VK_P
+.q	VK_Q
+.r	VK_R
+.s	VK_S
+.t	VK_T
+.u	VK_U
+.v	VK_V
+.w	VK_W
+.x	VK_X
+.y	VK_Y
+.z	VK_Z
+.{	VK_OPEN_BRACKET		shift
+.|	VK_BACK_SLASH		shift
+.}	VK_CLOSE_BRACKET	shift
+.~	VK_NUMBER_SIGN		shift
+
+#-------------------------------------------------------------------------------
+
+# Non-ASCII characters
+
+U+00A3	VK_3			shift	# pound sign
+U+00AC	VK_BACK_QUOTE	shift	# not sign
+
+#-------------------------------------------------------------------------------
