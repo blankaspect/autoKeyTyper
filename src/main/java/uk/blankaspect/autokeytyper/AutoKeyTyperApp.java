@@ -23,6 +23,8 @@ import java.awt.Robot;
 
 import java.io.IOException;
 
+import java.lang.invoke.MethodHandles;
+
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -268,8 +270,10 @@ public class AutoKeyTyperApp
 	/** Keys of colours that are used in colour properties. */
 	private interface ColourKey
 	{
-		String	CLEAR_INPUT_BUTTON_CROSS	= "clearInputButton.cross";
-		String	CLEAR_INPUT_BUTTON_DISC		= "clearInputButton.disc";
+		String	PREFIX	= StyleManager.colourKeyPrefix(MethodHandles.lookup().lookupClass().getEnclosingClass());
+
+		String	CLEAR_INPUT_BUTTON_CROSS	= PREFIX + "clearInputButton.cross";
+		String	CLEAR_INPUT_BUTTON_DISC		= PREFIX + "clearInputButton.disc";
 	}
 
 	/** Identifiers of nodes. */
@@ -435,8 +439,7 @@ public class AutoKeyTyperApp
 	private static Color getColour(
 		String	key)
 	{
-		Color colour = StyleManager.INSTANCE.getColour(key);
-		return (colour == null) ? StyleManager.DEFAULT_COLOUR : colour;
+		return StyleManager.INSTANCE.getColourOrDefault(key);
 	}
 
 	//------------------------------------------------------------------
@@ -716,7 +719,7 @@ public class AutoKeyTyperApp
 				abortButton.requestFocus();
 
 				// Start delay
-				delayTimer.playFromStart();
+				delayTimer.play();
 			}
 		});
 
