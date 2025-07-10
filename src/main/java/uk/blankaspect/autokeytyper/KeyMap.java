@@ -200,7 +200,7 @@ public class KeyMap
 			EnumSet<ModifierKey> modifierKeys = EnumSet.noneOf(ModifierKey.class);
 			if (numFields > MIN_NUM_FIELDS)
 			{
-				for (String key : fields[fieldIndex++].trim().split(" +"))
+				for (String key : fields[fieldIndex++].strip().split(" +"))
 				{
 					ModifierKey modifierKey = ModifierKey.forKey(key);
 					if (modifierKey == null)
@@ -286,9 +286,9 @@ public class KeyMap
 			String	key)
 		{
 			return Stream.of(values())
-							.filter(value -> value.key.equals(key))
-							.findFirst()
-							.orElse(null);
+					.filter(value -> value.key.equals(key))
+					.findFirst()
+					.orElse(null);
 		}
 
 		//--------------------------------------------------------------
@@ -386,7 +386,7 @@ public class KeyMap
 		 * @param lineIndex
 		 *          the zero-based index of the line at which the exception occurred.
 		 * @param replacements
-		 *          the objects whose string representations will replace placeholders in {@code message}.
+		 *          the items whose string representations will replace placeholders in {@code message}.
 		 */
 
 		private ParseException(

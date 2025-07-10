@@ -20,20 +20,26 @@ package uk.blankaspect.autokeytyper;
 
 import java.lang.invoke.MethodHandles;
 
+import java.util.Objects;
+
 import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 
 import javafx.scene.control.Button;
-import javafx.scene.control.Label;
 
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Region;
 
 import javafx.stage.Window;
 
 import uk.blankaspect.common.function.IProcedure1;
 
+import uk.blankaspect.ui.jfx.button.Buttons;
+
 import uk.blankaspect.ui.jfx.dialog.SimpleModalDialog;
+
+import uk.blankaspect.ui.jfx.label.Labels;
 
 import uk.blankaspect.ui.jfx.spinner.CollectionSpinner;
 
@@ -50,7 +56,7 @@ import uk.blankaspect.ui.jfx.style.StyleManager;
  */
 
 public class PreferencesDialog
-	extends SimpleModalDialog<Preferences>
+	extends SimpleModalDialog<Void>
 {
 
 ////////////////////////////////////////////////////////////////////////
@@ -70,8 +76,8 @@ public class PreferencesDialog
 //  Instance variables
 ////////////////////////////////////////////////////////////////////////
 
-	/** The result of this dialog. */
-	private	Preferences	result;
+	/** Flag: if {@code true}, this dialog was accepted. */
+	private	boolean	accepted;
 
 ////////////////////////////////////////////////////////////////////////
 //  Constructors
@@ -82,13 +88,10 @@ public class PreferencesDialog
 	 *
 	 * @param owner
 	 *          the window that will be the owner of this dialog, or {@code null} if the dialog has no owner.
-	 * @param preferences
-	 *          the initial preferences.
 	 */
 
 	private PreferencesDialog(
-		Window		owner,
-		Preferences	preferences)
+		Window	owner)
 	{
 		// Call superclass constructor
 		super(owner, MethodHandles.lookup().lookupClass().getCanonicalName(), null, PREFERENCES_STR);
@@ -97,23 +100,26 @@ public class PreferencesDialog
 		StyleManager styleManager = StyleManager.INSTANCE;
 		IProcedure1<String> selectTheme = id ->
 		{
-			// Update theme
-			styleManager.selectTheme(id);
+			if (id != null)
+			{
+				// Update theme
+				styleManager.selectTheme(id);
 
-			// Reapply style sheet to the scenes of all JavaFX windows
-			styleManager.reapplyStylesheet();
+				// Reapply style sheet to the scenes of all JavaFX windows
+				styleManager.reapplyStylesheet();
+			}
 		};
 
 		// Create spinner: theme
 		String themeId = styleManager.getThemeId();
 		CollectionSpinner<String> themeSpinner =
 				CollectionSpinner.leftRightH(HPos.CENTER, true, styleManager.getThemeIds(), themeId, null,
-											 id -> styleManager.findTheme(id).getName());
+											 id -> styleManager.findTheme(id).name());
 		themeSpinner.itemProperty().addListener((observable, oldId, id) -> selectTheme.invoke(id));
 
 		// Create control pane
-		HBox controlPane = new HBox(CONTROL_PANE_H_GAP, new Label(THEME_STR), themeSpinner);
-		controlPane.setMaxWidth(HBox.USE_PREF_SIZE);
+		HBox controlPane = new HBox(CONTROL_PANE_H_GAP, Labels.hNoShrink(THEME_STR), themeSpinner);
+		controlPane.setMaxWidth(Region.USE_PREF_SIZE);
 		controlPane.setAlignment(Pos.CENTER_LEFT);
 		controlPane.setPadding(CONTROL_PANE_PADDING);
 
@@ -121,12 +127,12 @@ public class PreferencesDialog
 		addContent(controlPane);
 
 		// Create button: OK
-		Button okButton = new Button(OK_STR);
+		Button okButton = Buttons.hNoShrink(OK_STR);
 		okButton.getProperties().put(BUTTON_GROUP_KEY, BUTTON_GROUP1);
 		okButton.setOnAction(event ->
 		{
-			// Get result
-			result = new Preferences(themeSpinner.getItem());
+			// Indicate that dialog was accepted
+			accepted = true;
 
 			// Close dialog
 			requestClose();
@@ -134,7 +140,7 @@ public class PreferencesDialog
 		addButton(okButton, HPos.RIGHT);
 
 		// Create button: cancel
-		Button cancelButton = new Button(CANCEL_STR);
+		Button cancelButton = Buttons.hNoShrink(CANCEL_STR);
 		cancelButton.getProperties().put(BUTTON_GROUP_KEY, BUTTON_GROUP1);
 		cancelButton.setOnAction(event -> requestClose());
 		addButton(cancelButton, HPos.RIGHT);
@@ -145,7 +151,7 @@ public class PreferencesDialog
 		// When window is closed, restore old theme if dialog was not accepted
 		setOnHiding(event ->
 		{
-			if ((result == null) && (themeId != null) && !themeId.equals(styleManager.getThemeId()))
+			if (!accepted && !Objects.equals(themeId, styleManager.getThemeId()))
 				selectTheme.invoke(themeId);
 		});
 
@@ -159,27 +165,10 @@ public class PreferencesDialog
 //  Class methods
 ////////////////////////////////////////////////////////////////////////
 
-	public static Preferences show(
-		Window		owner,
-		Preferences	preferences)
+	public static void show(
+		Window	owner)
 	{
-		return new PreferencesDialog(owner, preferences).showDialog();
-	}
-
-	//------------------------------------------------------------------
-
-////////////////////////////////////////////////////////////////////////
-//  Instance methods : overriding methods
-////////////////////////////////////////////////////////////////////////
-
-	/**
-	 * {@inheritDoc}
-	 */
-
-	@Override
-	protected Preferences getResult()
-	{
-		return result;
+		new PreferencesDialog(owner).showDialog();
 	}
 
 	//------------------------------------------------------------------

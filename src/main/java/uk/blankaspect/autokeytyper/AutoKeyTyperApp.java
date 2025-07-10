@@ -57,16 +57,11 @@ import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.TilePane;
 import javafx.scene.layout.VBox;
 
 import javafx.scene.paint.Color;
-
-import javafx.scene.shape.Circle;
-import javafx.scene.shape.LineTo;
-import javafx.scene.shape.MoveTo;
-import javafx.scene.shape.Rectangle;
-import javafx.scene.shape.StrokeLineCap;
 
 import javafx.stage.Stage;
 
@@ -94,18 +89,27 @@ import uk.blankaspect.common.function.IProcedure0;
 
 import uk.blankaspect.common.logging.ErrorLogger;
 
+import uk.blankaspect.common.os.OsUtils;
+
 import uk.blankaspect.common.resource.ResourceProperties;
 import uk.blankaspect.common.resource.ResourceUtils;
 
 import uk.blankaspect.common.string.StringUtils;
 
+import uk.blankaspect.ui.jfx.button.Buttons;
 import uk.blankaspect.ui.jfx.button.GraphicButton;
 
+import uk.blankaspect.ui.jfx.container.PaneStyle;
+
 import uk.blankaspect.ui.jfx.dialog.ErrorDialog;
+
+import uk.blankaspect.ui.jfx.exec.ExecUtils;
 
 import uk.blankaspect.ui.jfx.filler.FillerUtils;
 
 import uk.blankaspect.ui.jfx.font.Fonts;
+
+import uk.blankaspect.ui.jfx.icon.Icons;
 
 import uk.blankaspect.ui.jfx.scene.SceneUtils;
 
@@ -118,10 +122,7 @@ import uk.blankaspect.ui.jfx.style.RuleSetBuilder;
 import uk.blankaspect.ui.jfx.style.StyleConstants;
 import uk.blankaspect.ui.jfx.style.StyleManager;
 
-import uk.blankaspect.ui.jfx.text.TextUtils;
-
 import uk.blankaspect.ui.jfx.window.WindowState;
-import uk.blankaspect.ui.jfx.window.WindowUtils;
 
 //----------------------------------------------------------------------
 
@@ -153,7 +154,7 @@ public class AutoKeyTyperApp
 	/** The long name of the application. */
 	private static final	String	LONG_NAME	= "Automatic key typer";
 
-	/** The key with which the application is associated. */
+	/** The name of the application when used as a key. */
 	private static final	String	NAME_KEY	= StringUtils.firstCharToLowerCase(SHORT_NAME);
 
 	/** The name of the file that contains the build properties of the application. */
@@ -161,6 +162,15 @@ public class AutoKeyTyperApp
 
 	/** The filename of the CSS style sheet. */
 	private static final	String	STYLE_SHEET_FILENAME	= NAME_KEY + "-%02d.css";
+
+	/** The delay (in milliseconds) in a <i>WINDOW_SHOWN</i> event handler on platforms other than Windows. */
+	private static final	int		WINDOW_SHOWN_DELAY	= 150;
+
+	/** The delay (in milliseconds) in a <i>WINDOW_SHOWN</i> event handler on Windows. */
+	private static final	int		WINDOW_SHOWN_DELAY_WINDOWS	= 50;
+
+	/** The delay (in milliseconds) before making the main window visible by restoring its opacity. */
+	private static final	int		WINDOW_VISIBLE_DELAY	= 50;
 
 	/** The margins that are applied to the visual bounds of each screen when determining whether the saved location of
 		the main window is within a screen. */
@@ -178,18 +188,6 @@ public class AutoKeyTyperApp
 	/** The preferred number of columns of the input field. */
 	private static final	int		INPUT_FIELD_NUM_COLUMNS	= 40;
 
-	/** The factor by which the height of the default font is multiplied to give the dimensions of a <i>clear input</i>
-		icon. */
-	private static final	double	CLEAR_INPUT_ICON_SIZE_FACTOR	= 0.8;
-
-	/** The factor by which the radius of the disc of the <i>clear input</i> icon is multiplied to give a coordinate of
-		the cross of the icon. */
-	private static final	double	CLEAR_INPUT_ICON_CROSS_SIZE_FACTOR	= 0.4;
-
-	/** The factor by which the radius of the disc of the <i>clear input</i> icon is multiplied to give the width of the
-		strokes of the cross. */
-	private static final	double	CLEAR_INPUT_ICON_CROSS_STROKE_WIDTH_FACTOR	= 0.3;
-
 	/** The horizontal gap between adjacent components of the control pane. */
 	private static final	double	CONTROL_PANE_H_GAP	= 6.0;
 
@@ -197,10 +195,7 @@ public class AutoKeyTyperApp
 	private static final	double	CONTROL_PANE_V_GAP	= 6.0;
 
 	/** The padding around the control pane. */
-	private static final	Insets	CONTROL_PANE_PADDING	= new Insets(8.0, 10.0, 8.0, 12.0);
-
-	/** The border colour of the control pane. */
-	private static final	Color	CONTROL_PANE_BORDER_COLOUR	= Color.grayRgb(200);
+	private static final	Insets	CONTROL_PANE_PADDING	= new Insets(8.0, 8.0, 8.0, 12.0);
 
 	/** The horizontal gap between adjacent buttons of the button pane. */
 	private static final	double	BUTTON_PANE_H_GAP	= 12.0;
@@ -232,18 +227,27 @@ public class AutoKeyTyperApp
 			FxProperty.FILL,
 			ColourKey.CLEAR_INPUT_BUTTON_DISC,
 			CssSelector.builder()
-						.cls(StyleClass.AUTO_KEY_TYPER)
-						.desc(StyleClass.CLEAR_INPUT_BUTTON_DISC)
-						.build()
+					.id(StyleConstants.NodeId.APP_MAIN_ROOT)
+					.desc(Icons.StyleClass.CLEAR01_DISC)
+					.build()
 		),
 		ColourProperty.of
 		(
 			FxProperty.STROKE,
 			ColourKey.CLEAR_INPUT_BUTTON_CROSS,
 			CssSelector.builder()
-						.cls(StyleClass.AUTO_KEY_TYPER)
-						.desc(StyleClass.CLEAR_INPUT_BUTTON_CROSS)
-						.build()
+					.id(StyleConstants.NodeId.APP_MAIN_ROOT)
+					.desc(Icons.StyleClass.CLEAR01_CROSS)
+					.build()
+		),
+		ColourProperty.of
+		(
+			FxProperty.BORDER_COLOUR,
+			PaneStyle.ColourKey.PANE_BORDER,
+			CssSelector.builder()
+					.id(StyleConstants.NodeId.APP_MAIN_ROOT)
+					.desc(StyleClass.CONTROL_PANE)
+					.build()
 		)
 	);
 
@@ -251,20 +255,27 @@ public class AutoKeyTyperApp
 	private static final	List<CssRuleSet>	RULE_SETS	= List.of
 	(
 		RuleSetBuilder.create()
-						.selector(CssSelector.builder()
-									.id(NodeId.INPUT_FIELD)
-									.desc(FxStyleClass.TEXT)
-									.build())
-						.grayFontSmoothing()
-						.build()
+				.selector(CssSelector.builder()
+						.id(StyleConstants.NodeId.APP_MAIN_ROOT)
+						.desc(StyleClass.CONTROL_PANE)
+						.build())
+				.borders(Side.BOTTOM)
+				.build(),
+		RuleSetBuilder.create()
+				.selector(CssSelector.builder()
+						.id(StyleConstants.NodeId.APP_MAIN_ROOT)
+						.desc(StyleClass.INPUT_FIELD)
+						.desc(FxStyleClass.TEXT)
+						.build())
+				.grayFontSmoothing()
+				.build()
 	);
 
 	/** CSS style classes. */
 	private interface StyleClass
 	{
-		String	AUTO_KEY_TYPER				= StyleConstants.CLASS_PREFIX + "auto-key-typer";
-		String	CLEAR_INPUT_BUTTON_CROSS	= StyleConstants.CLASS_PREFIX + "clear-input-button-cross";
-		String	CLEAR_INPUT_BUTTON_DISC		= StyleConstants.CLASS_PREFIX + "clear-input-button-disc";
+		String	CONTROL_PANE	= StyleConstants.CLASS_PREFIX + "control-pane";
+		String	INPUT_FIELD		= StyleConstants.CLASS_PREFIX + "input-field";
 	}
 
 	/** Keys of colours that are used in colour properties. */
@@ -274,12 +285,6 @@ public class AutoKeyTyperApp
 
 		String	CLEAR_INPUT_BUTTON_CROSS	= PREFIX + "clearInputButton.cross";
 		String	CLEAR_INPUT_BUTTON_DISC		= PREFIX + "clearInputButton.disc";
-	}
-
-	/** Identifiers of nodes. */
-	private interface NodeId
-	{
-		String	INPUT_FIELD	= "inputField";
 	}
 
 	/** Keys of properties. */
@@ -296,6 +301,7 @@ public class AutoKeyTyperApp
 	{
 		String	KEY_MAP					= "keyMap";
 		String	USE_STYLE_SHEET_FILE	= "useStyleSheetFile";
+		String	WINDOW_SHOWN_DELAY		= "windowShownDelay";
 	}
 
 	/** Error messages. */
@@ -323,12 +329,6 @@ public class AutoKeyTyperApp
 	/** The string representation of the version of this application. */
 	private	String				versionStr;
 
-	/** The configuration of this application. */
-	private	Configuration		configuration;
-
-	/** User preferences. */
-	private	Preferences			preferences;
-
 	/** The state of the main window. */
 	private	WindowState			mainWindowState;
 
@@ -337,9 +337,6 @@ public class AutoKeyTyperApp
 
 	/** The object that adds native key events to the platform's input queue. */
 	private	Robot				robot;
-
-	/** The main window. */
-	private	Stage				primaryStage;
 
 	/** The <i>delay</i> spinner. */
 	private	IntRangeSpinner		delaySpinner;
@@ -387,52 +384,38 @@ public class AutoKeyTyperApp
 	//------------------------------------------------------------------
 
 	/**
-	 * Creates and returns an icon that represents a <i>clear input</i> action.
+	 * Returns the delay (in milliseconds) in a <i>WINDOW_SHOWN</i> event handler.
 	 *
-	 * @return an icon that represents a <i>clear input</i> action.
+	 * @return the delay (in milliseconds) in a <i>WINDOW_SHOWN</i> event handler.
 	 */
 
-	private static Group createClearInputIcon()
+	private static int getWindowShownDelay()
 	{
-		// Get size of icon from height of default font
-		double size = Math.rint(CLEAR_INPUT_ICON_SIZE_FACTOR * TextUtils.textHeight());
-
-		// Create disc
-		double radius = 0.5 * size;
-		Circle disc = new Circle(radius, getColour(ColourKey.CLEAR_INPUT_BUTTON_DISC));
-		disc.getStyleClass().add(StyleClass.CLEAR_INPUT_BUTTON_DISC);
-
-		// Create cross
-		double coord = CLEAR_INPUT_ICON_CROSS_SIZE_FACTOR * radius;
-		javafx.scene.shape.Path cross = new javafx.scene.shape.Path
-		(
-			new MoveTo(-coord, -coord),
-			new LineTo(coord, coord),
-			new MoveTo(-coord, coord),
-			new LineTo(coord, -coord)
-		);
-		cross.setStroke(getColour(ColourKey.CLEAR_INPUT_BUTTON_CROSS));
-		cross.setStrokeWidth(radius * CLEAR_INPUT_ICON_CROSS_STROKE_WIDTH_FACTOR);
-		cross.setStrokeLineCap(StrokeLineCap.ROUND);
-		cross.getStyleClass().add(StyleClass.CLEAR_INPUT_BUTTON_CROSS);
-
-		// Create background rectangle
-		Rectangle background = new Rectangle(-radius, -radius, size, size);
-		background.setFill(Color.TRANSPARENT);
-
-		// Create and return icon
-		return new Group(background, disc, cross);
+		int delay = OsUtils.isWindows() ? WINDOW_SHOWN_DELAY_WINDOWS : WINDOW_SHOWN_DELAY;
+		String value = System.getProperty(SystemPropertyKey.WINDOW_SHOWN_DELAY);
+		if (value != null)
+		{
+			try
+			{
+				delay = Integer.parseInt(value);
+			}
+			catch (NumberFormatException e)
+			{
+				e.printStackTrace();
+			}
+		}
+		return delay;
 	}
 
 	//------------------------------------------------------------------
 
 	/**
-	 * Returns the colour that is associated with the specified key in the colour map of the selected theme of the
+	 * Returns the colour that is associated with the specified key in the colour map of the current theme of the
 	 * {@linkplain StyleManager style manager}.
 	 *
 	 * @param  key
 	 *           the key of the desired colour.
-	 * @return the colour that is associated with {@code key} in the colour map of the selected theme of the style
+	 * @return the colour that is associated with {@code key} in the colour map of the current theme of the style
 	 *         manager, or {@link StyleManager#DEFAULT_COLOUR} if there is no such colour.
 	 */
 
@@ -456,6 +439,9 @@ public class AutoKeyTyperApp
 	public void start(
 		Stage	primaryStage)
 	{
+		// Make main window invisible until it is shown
+		primaryStage.setOpacity(0.0);
+
 		// Log stack trace of uncaught exception
 		if (ClassUtils.isFromJar(getClass()))
 		{
@@ -473,15 +459,14 @@ public class AutoKeyTyperApp
 		}
 
 		// Initialise instance variables
-		preferences = new Preferences();
 		mainWindowState = new WindowState(false, true);
 		delay = DEFAULT_DELAY;
-		this.primaryStage = primaryStage;
 
 		// Read build properties
 		try
 		{
-			buildProperties = new ResourceProperties(ResourceUtils.normalisedPathname(getClass(), BUILD_PROPERTIES_FILENAME));
+			buildProperties =
+					new ResourceProperties(ResourceUtils.normalisedPathname(getClass(), BUILD_PROPERTIES_FILENAME));
 			versionStr = BuildUtils.versionString(getClass(), buildProperties);
 		}
 		catch (LocationException e)
@@ -489,33 +474,42 @@ public class AutoKeyTyperApp
 			e.printStackTrace();
 		}
 
+		// Create container for local variables
+		class Vars
+		{
+			Configuration	config;
+			BaseException	configException;
+		}
+		Vars vars = new Vars();
+
 		// Read configuration file and decode configuration
-		BaseException configException = null;
 		try
 		{
 			// Initialise configuration
-			configuration = new Configuration();
+			vars.config = new Configuration();
 
-			// Read configuration file
-			configuration.read();
+			// Read and decode configuration
+			if (!AppConfig.noConfigFile())
+			{
+				// Read configuration file
+				vars.config.read();
 
-			// Decode configuration
-			decodeConfig(configuration.getConfig());
+				// Decode configuration
+				decodeConfig(vars.config.getConfig());
+			}
 		}
 		catch (BaseException e)
 		{
-			configException = e;
+			vars.configException = e;
 		}
 
 		// Get style manager
 		StyleManager styleManager = StyleManager.INSTANCE;
 
-		// Select theme
+		// Select theme from system property
 		String themeId = System.getProperty(StyleManager.SystemPropertyKey.THEME);
-		if (StringUtils.isNullOrEmpty(themeId))
-			themeId = preferences.getThemeId();
-		if (themeId != null)
-			styleManager.selectTheme(themeId);
+		if (!StringUtils.isNullOrEmpty(themeId))
+			styleManager.selectThemeOrDefault(themeId);
 
 		// Set ID and style-sheet filename on style manager
 		if (Boolean.getBoolean(SystemPropertyKey.USE_STYLE_SHEET_FILE))
@@ -524,8 +518,8 @@ public class AutoKeyTyperApp
 			styleManager.setStyleSheetFilename(STYLE_SHEET_FILENAME);
 		}
 
-		// Register the style properties of this class with the style manager
-		styleManager.register(getClass(), COLOUR_PROPERTIES, RULE_SETS);
+		// Register the style properties of this class and its dependencies with the style manager
+		styleManager.register(getClass(), COLOUR_PROPERTIES, RULE_SETS, PaneStyle.class);
 
 		// Create robot to generate key events
 		try
@@ -574,12 +568,13 @@ public class AutoKeyTyperApp
 		controlPane.setVgap(CONTROL_PANE_V_GAP);
 		controlPane.setAlignment(Pos.CENTER);
 		controlPane.setPadding(CONTROL_PANE_PADDING);
-		controlPane.setBorder(SceneUtils.createSolidBorder(CONTROL_PANE_BORDER_COLOUR, Side.BOTTOM));
+		controlPane.setBorder(SceneUtils.createSolidBorder(getColour(PaneStyle.ColourKey.PANE_BORDER), Side.BOTTOM));
+		controlPane.getStyleClass().add(StyleClass.CONTROL_PANE);
 		VBox.setVgrow(controlPane, Priority.ALWAYS);
 
 		// Initialise column constraints
 		ColumnConstraints column = new ColumnConstraints();
-		column.setMinWidth(GridPane.USE_PREF_SIZE);
+		column.setMinWidth(Region.USE_PREF_SIZE);
 		column.setHalignment(HPos.RIGHT);
 		controlPane.getColumnConstraints().add(column);
 
@@ -592,14 +587,16 @@ public class AutoKeyTyperApp
 
 		// Create text field: input
 		TextField inputField = new TextField();
-		inputField.setId(NodeId.INPUT_FIELD);
 		inputField.setFont(Fonts.monoFont());
 		inputField.setPrefColumnCount(INPUT_FIELD_NUM_COLUMNS);
 		inputField.setOnAction(event -> generateButton.fire());
+		inputField.getStyleClass().add(StyleClass.INPUT_FIELD);
 		HBox.setHgrow(inputField, Priority.ALWAYS);
 
 		// Create button: clear input
-		GraphicButton clearInputButton = new GraphicButton(createClearInputIcon(), CLEAR_INPUT_STR);
+		Group clearIcon = Icons.clear01(getColour(ColourKey.CLEAR_INPUT_BUTTON_DISC),
+										getColour(ColourKey.CLEAR_INPUT_BUTTON_CROSS));
+		GraphicButton clearInputButton = new GraphicButton(clearIcon, CLEAR_INPUT_STR);
 		clearInputButton.setOnAction(event ->
 		{
 			Platform.runLater(() ->
@@ -610,7 +607,7 @@ public class AutoKeyTyperApp
 		});
 
 		// Create pane: input
-		HBox inputPane = new HBox(2.0, inputField, clearInputButton);
+		HBox inputPane = new HBox(4.0, inputField, clearInputButton);
 		inputPane.setAlignment(Pos.CENTER_LEFT);
 		controlPane.addRow(row++, new Label(INPUT_STR), inputPane);
 		GridPane.setHgrow(inputPane, Priority.ALWAYS);
@@ -624,8 +621,8 @@ public class AutoKeyTyperApp
 		controlPane.addRow(row++, new Label(DELAY_STR), delayPane);
 
 		// Create button: preferences
-		Button preferencesButton = new Button(PREFERENCES_STR);
-		preferencesButton.setOnAction(event -> onEditPreferences());
+		Button preferencesButton = Buttons.hNoShrink(PREFERENCES_STR);
+		preferencesButton.setOnAction(event -> PreferencesDialog.show(primaryStage));
 
 		// Create procedure to update buttons
 		IProcedure0 updateButtons = () ->
@@ -638,8 +635,7 @@ public class AutoKeyTyperApp
 		};
 
 		// Create button: abort
-		abortButton = new Button(ABORT_STR);
-		abortButton.setMaxWidth(Double.MAX_VALUE);
+		abortButton = Buttons.hExpansive(ABORT_STR);
 		abortButton.setOnAction(event ->
 		{
 			// Stop delay timer and invalidate it
@@ -657,8 +653,7 @@ public class AutoKeyTyperApp
 		});
 
 		// Create button: generate
-		generateButton = new Button(GENERATE_STR);
-		generateButton.setMaxWidth(Double.MAX_VALUE);
+		generateButton = Buttons.hExpansive(GENERATE_STR);
 		generateButton.setOnAction(event ->
 		{
 			// Get text from input field
@@ -741,8 +736,8 @@ public class AutoKeyTyperApp
 
 		// Create main pane
 		VBox mainPane = new VBox(controlPane, buttonPane);
+		mainPane.setId(StyleConstants.NodeId.APP_MAIN_ROOT);
 		mainPane.setAlignment(Pos.CENTER);
-		mainPane.getStyleClass().add(StyleClass.AUTO_KEY_TYPER);
 
 		// Create scene
 		Scene scene = new Scene(mainPane);
@@ -756,52 +751,61 @@ public class AutoKeyTyperApp
 
 		// Set scene on main window
 		primaryStage.setScene(scene);
+		primaryStage.sizeToScene();
 
-		// Set location and width of main window when it is opening
-		primaryStage.setOnShowing(event ->
-		{
-			// Set location of window
-			Point2D location = mainWindowState.getLocation();
-			if (location != null)
-			{
-				primaryStage.setX(location.getX());
-				primaryStage.setY(location.getY());
-			}
-
-			// Set size/width of window
-			Dimension2D size = mainWindowState.getSize();
-			if (size == null)
-				primaryStage.sizeToScene();
-			else
-				primaryStage.setWidth(size.getWidth());
-		});
-
-		// Set location of main window after it is shown
+		// When main window is shown, set its width and location after a delay
 		primaryStage.setOnShown(event ->
 		{
-			// Get location of window
-			Point2D location = mainWindowState.getLocation();
-
-			// Invalidate location if top centre of window is not within a screen
-			double width = primaryStage.getWidth();
-			if ((location != null)
-					&& !SceneUtils.isWithinScreen(location.getX() + 0.5 * width, location.getY(), SCREEN_MARGINS))
-				location = null;
-
-			// If there is no location, centre window within primary screen
-			if (location == null)
+			// Set width and location of main window after a delay
+			ExecUtils.afterDelay(getWindowShownDelay(), () ->
 			{
-				location = SceneUtils.centreInScreen(width, primaryStage.getHeight());
+				// Get size of window from saved state
+				Dimension2D size = mainWindowState.getSize();
+
+				// Set width of window
+				if (size != null)
+				{
+					primaryStage.setWidth(size.getWidth());
+					primaryStage.setHeight(primaryStage.getHeight());	// required for Linux/GNOME
+				}
+
+				// Get location of window from saved state
+				Point2D location = mainWindowState.getLocation();
+
+				// Invalidate location if top centre of window is not within a screen
+				double width = primaryStage.getWidth();
+				if ((location != null)
+						&& !SceneUtils.isWithinScreen(location.getX() + 0.5 * width, location.getY(), SCREEN_MARGINS))
+					location = null;
+
+				// If there is no location, centre window within primary screen
+				if (location == null)
+					location = SceneUtils.centreInScreen(width, primaryStage.getHeight());
+
+				// Set location of window
 				primaryStage.setX(location.getX());
 				primaryStage.setY(location.getY());
-			}
 
-			// Prevent height of main window from changing
-			WindowUtils.preventHeightChange(primaryStage);
+				// Prevent height of window from changing
+				double height = Math.ceil(primaryStage.getHeight());
+				primaryStage.setMinHeight(height);
+				primaryStage.setMaxHeight(height);
+
+				// Perform remaining initialisation after a delay
+				ExecUtils.afterDelay(WINDOW_VISIBLE_DELAY, () ->
+				{
+					// Make window visible
+					primaryStage.setOpacity(1.0);
+
+					// Report any configuration error
+					if (vars.configException != null)
+						ErrorDialog.show(primaryStage, SHORT_NAME + " : " + CONFIG_ERROR_STR, vars.configException);
+				});
+			});
 		});
 
 		// Write configuration file when main window is closed
-		if (configuration != null)
+		if (vars.config != null)
 		{
 			primaryStage.setOnHiding(event ->
 			{
@@ -809,15 +813,15 @@ public class AutoKeyTyperApp
 				mainWindowState.restoreAndUpdate(primaryStage);
 
 				// Write configuration
-				if (configuration.canWrite())
+				if (vars.config.canWrite())
 				{
 					try
 					{
 						// Encode configuration
-						encodeConfig(configuration.getConfig());
+						encodeConfig(vars.config.getConfig());
 
 						// Write configuration file
-						configuration.write();
+						vars.config.write();
 					}
 					catch (FileException e)
 					{
@@ -829,10 +833,6 @@ public class AutoKeyTyperApp
 
 		// Display main window
 		primaryStage.show();
-
-		// Report any configuration error
-		if (configException != null)
-			ErrorDialog.show(primaryStage, SHORT_NAME + " : " + CONFIG_ERROR_STR, configException);
 	}
 
 	//------------------------------------------------------------------
@@ -855,7 +855,9 @@ public class AutoKeyTyperApp
 		rootNode.clear();
 
 		// Encode theme ID
-		rootNode.addMap(PropertyKey.APPEARANCE).addString(PropertyKey.THEME, preferences.getThemeId());
+		String themeId = StyleManager.INSTANCE.getThemeId();
+		if (themeId != null)
+			rootNode.addMap(PropertyKey.APPEARANCE).addString(PropertyKey.THEME, themeId);
 
 		// Encode state of main window
 		MapNode windowStateNode = mainWindowState.encodeTree();
@@ -883,7 +885,10 @@ public class AutoKeyTyperApp
 		// Decode theme ID
 		String key = PropertyKey.APPEARANCE;
 		if (rootNode.hasMap(key))
-			preferences.setThemeId(rootNode.getMapNode(key).getString(PropertyKey.THEME, StyleManager.DEFAULT_THEME_ID));
+		{
+			String themeId = rootNode.getMapNode(key).getString(PropertyKey.THEME, StyleManager.DEFAULT_THEME_ID);
+			StyleManager.INSTANCE.selectThemeOrDefault(themeId);
+		}
 
 		// Decode state of main window
 		key = PropertyKey.MAIN_WINDOW;
@@ -892,34 +897,6 @@ public class AutoKeyTyperApp
 
 		// Decode delay
 		delay = rootNode.getInt(PropertyKey.DELAY, DEFAULT_DELAY);
-	}
-
-	//------------------------------------------------------------------
-
-	/**
-	 * Displays a modal dialog in which the user preferences of the application may be edited.
-	 */
-
-	private void onEditPreferences()
-	{
-		Preferences result = PreferencesDialog.show(primaryStage, preferences);
-		if (result != null)
-		{
-			// Update instance variable
-			preferences = result;
-
-			// Apply theme
-			StyleManager styleManager = StyleManager.INSTANCE;
-			String themeId = preferences.getThemeId();
-			if ((themeId != null) && !themeId.equals(styleManager.getThemeId()))
-			{
-				// Update theme
-				styleManager.selectTheme(themeId);
-
-				// Reapply style sheet to the scenes of all JavaFX windows
-				styleManager.reapplyStylesheet();
-			}
-		}
 	}
 
 	//------------------------------------------------------------------
@@ -964,13 +941,18 @@ public class AutoKeyTyperApp
 			// Call superclass constructor
 			super(ID, NAME_KEY, SHORT_NAME, LONG_NAME);
 
-			// Get location of parent directory of config file
-			AppAuxDirectory.Directory directory = AppAuxDirectory.getDirectory(NAME_KEY, AutoKeyTyperApp.class);
-			if (directory == null)
-				throw new BaseException(ErrorMsg.NO_AUXILIARY_DIRECTORY);
+			// Determine location of config file
+			if (!noConfigFile())
+			{
+				// Get location of parent directory of config file
+				AppAuxDirectory.Directory directory =
+						AppAuxDirectory.getDirectory(NAME_KEY, getClass().getEnclosingClass());
+				if (directory == null)
+					throw new BaseException(ErrorMsg.NO_AUXILIARY_DIRECTORY);
 
-			// Set parent directory of config file
-			setDirectory(directory.location());
+				// Set parent directory of config file
+				setDirectory(directory.location());
+			}
 		}
 
 		//--------------------------------------------------------------
