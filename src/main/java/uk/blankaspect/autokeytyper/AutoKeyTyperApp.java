@@ -23,21 +23,14 @@ import java.awt.Robot;
 
 import java.io.IOException;
 
-import java.lang.invoke.MethodHandles;
-
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-import java.util.ArrayList;
-import java.util.Collections;
+import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 
-import javafx.animation.KeyFrame;
-import javafx.animation.Timeline;
-
 import javafx.application.Application;
-import javafx.application.Platform;
 
 import javafx.geometry.Dimension2D;
 import javafx.geometry.HPos;
@@ -46,26 +39,20 @@ import javafx.geometry.Point2D;
 import javafx.geometry.Pos;
 import javafx.geometry.Side;
 
-import javafx.scene.Group;
+import javafx.scene.Node;
 import javafx.scene.Scene;
 
 import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.control.TextField;
 
-import javafx.scene.layout.ColumnConstraints;
-import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
-import javafx.scene.layout.Priority;
-import javafx.scene.layout.Region;
-import javafx.scene.layout.TilePane;
+import javafx.scene.layout.Pane;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 
 import javafx.scene.paint.Color;
 
 import javafx.stage.Stage;
-
-import javafx.util.Duration;
+import javafx.stage.WindowEvent;
 
 import uk.blankaspect.common.basictree.MapNode;
 
@@ -85,7 +72,7 @@ import uk.blankaspect.common.exception2.LocationException;
 
 import uk.blankaspect.common.filesystem.PathnameUtils;
 
-import uk.blankaspect.common.function.IProcedure0;
+import uk.blankaspect.common.function.IProcedure1;
 
 import uk.blankaspect.common.logging.ErrorLogger;
 
@@ -97,7 +84,7 @@ import uk.blankaspect.common.resource.ResourceUtils;
 import uk.blankaspect.common.string.StringUtils;
 
 import uk.blankaspect.ui.jfx.button.Buttons;
-import uk.blankaspect.ui.jfx.button.GraphicButton;
+import uk.blankaspect.ui.jfx.button.ImageDataButton;
 
 import uk.blankaspect.ui.jfx.container.PaneStyle;
 
@@ -107,17 +94,16 @@ import uk.blankaspect.ui.jfx.exec.ExecUtils;
 
 import uk.blankaspect.ui.jfx.filler.FillerUtils;
 
-import uk.blankaspect.ui.jfx.font.Fonts;
+import uk.blankaspect.ui.jfx.image.ImageData;
 
-import uk.blankaspect.ui.jfx.icon.Icons;
+import uk.blankaspect.ui.jfx.label.Labels;
 
 import uk.blankaspect.ui.jfx.scene.SceneUtils;
 
-import uk.blankaspect.ui.jfx.spinner.IntRangeSpinner;
+import uk.blankaspect.ui.jfx.spinner.CollectionSpinner;
 
 import uk.blankaspect.ui.jfx.style.ColourProperty;
 import uk.blankaspect.ui.jfx.style.FxProperty;
-import uk.blankaspect.ui.jfx.style.FxStyleClass;
 import uk.blankaspect.ui.jfx.style.RuleSetBuilder;
 import uk.blankaspect.ui.jfx.style.StyleConstants;
 import uk.blankaspect.ui.jfx.style.StyleManager;
@@ -131,12 +117,22 @@ import uk.blankaspect.ui.jfx.window.WindowState;
 
 
 /**
- * This class implements a JavaFX application that can generate a sequence of native key events for some chosen input
- * text.  The key events are added to the platform's input queue after a specified delay, which is equivalent to typing
- * the input text on a keyboard.
+ * This class implements a JavaFX application that has two abilities:
+ * <ol>
+ *   <li>
+ *     It can generate a sequence of native <i>key typed</i> events for some chosen input text after a specified delay.
+ *     The events are added to the platform's input queue, which is equivalent to typing the input text on a keyboard.
+ *   </li>
+ *   <li>
+ *     It can periodically generate a pair of native <i>key pressed</i> and <i>key released</i> events for a specified
+ *     key, with a specified interval between key presses.  This is equivalent to repeatedly pressing and releasing a
+ *     key on a keyboard at regular intervals.
+ *   </li>
+ * </ol>
  * <p>
- * This application may be used to facilitate the entry of text into an input field (for example, a password field on a
- * web page) that does not allow text to be pasted from the system clipboard.
+ * The first ability may be used to enter text into an input field (for example, a password field on a web page) that
+ * doesn't allow text to be pasted into it from the system clipboard.  The second ability may be used to prevent a
+ * computer from entering a power-saving sleep state while a non-interactive or unattended application is running.
  * </p>
  */
 
@@ -164,7 +160,7 @@ public class AutoKeyTyperApp
 	private static final	String	STYLE_SHEET_FILENAME	= NAME_KEY + "-%02d.css";
 
 	/** The delay (in milliseconds) in a <i>WINDOW_SHOWN</i> event handler on platforms other than Windows. */
-	private static final	int		WINDOW_SHOWN_DELAY	= 150;
+	private static final	int		WINDOW_SHOWN_DELAY	= 200;
 
 	/** The delay (in milliseconds) in a <i>WINDOW_SHOWN</i> event handler on Windows. */
 	private static final	int		WINDOW_SHOWN_DELAY_WINDOWS	= 50;
@@ -176,77 +172,36 @@ public class AutoKeyTyperApp
 		the main window is within a screen. */
 	private static final	Insets	SCREEN_MARGINS	= new Insets(0.0, 32.0, 32.0, 0.0);
 
-	/** The minimum delay (in seconds) when generating key events. */
-	private static final	int		MIN_DELAY		= 1;
-
-	/** The maximum delay (in seconds) when generating key events. */
-	private static final	int		MAX_DELAY		= 15;
-
-	/** The default delay (in seconds) when generating key events. */
-	private static final	int		DEFAULT_DELAY	= 3;
-
-	/** The preferred number of columns of the input field. */
-	private static final	int		INPUT_FIELD_NUM_COLUMNS	= 40;
+	/** The padding around the page pane. */
+	private static final	Insets	PAGE_PANE_PADDING	= new Insets(4.0, 6.0, 4.0, 6.0);
 
 	/** The horizontal gap between adjacent components of the control pane. */
 	private static final	double	CONTROL_PANE_H_GAP	= 6.0;
 
-	/** The vertical gap between adjacent components of the control pane. */
-	private static final	double	CONTROL_PANE_V_GAP	= 6.0;
-
 	/** The padding around the control pane. */
-	private static final	Insets	CONTROL_PANE_PADDING	= new Insets(8.0, 8.0, 8.0, 12.0);
+	private static final	Insets	CONTROL_PANE_PADDING	= new Insets(6.0, 12.0, 6.0, 12.0);
 
-	/** The horizontal gap between adjacent buttons of the button pane. */
-	private static final	double	BUTTON_PANE_H_GAP	= 12.0;
-
-	/** The vertical gap between adjacent buttons of the button pane. */
-	private static final	double	BUTTON_PANE_V_GAP	= 6.0;
-
-	/** The padding around the button pane. */
-	private static final	Insets	BUTTON_PANE_PADDING	= new Insets(4.0, 12.0, 4.0, 12.0);
+	/** The padding around a button. */
+	private static final	Insets	BUTTON_PADDING	= new Insets(4.0, 16.0, 4.0, 16.0);
 
 	/** The name of the default key-map file. */
 	private static final	String	KEY_MAP_FILENAME	= "keyMap.txt";
 
 	/** Miscellaneous strings. */
 	private static final	String	CONFIG_ERROR_STR	= "Configuration error";
-	private static final	String	INPUT_STR			= "Input";
-	private static final	String	CLEAR_INPUT_STR		= "Clear input";
-	private static final	String	DELAY_STR			= "Delay";
-	private static final	String	SECONDS_STR			= "seconds";
-	private static final	String	PREFERENCES_STR		= "Preferences";
-	private static final	String	ABORT_STR			= "Abort";
-	private static final	String	GENERATE_STR		= "Generate";
+	private static final	String	PAGE_STR			= "Page";
+	private static final	String	EXIT_STR			= "Exit";
 
 	/** CSS colour properties. */
 	private static final	List<ColourProperty>	COLOUR_PROPERTIES	= List.of
 	(
 		ColourProperty.of
 		(
-			FxProperty.FILL,
-			ColourKey.CLEAR_INPUT_BUTTON_DISC,
-			CssSelector.builder()
-					.id(StyleConstants.NodeId.APP_MAIN_ROOT)
-					.desc(Icons.StyleClass.CLEAR01_DISC)
-					.build()
-		),
-		ColourProperty.of
-		(
-			FxProperty.STROKE,
-			ColourKey.CLEAR_INPUT_BUTTON_CROSS,
-			CssSelector.builder()
-					.id(StyleConstants.NodeId.APP_MAIN_ROOT)
-					.desc(Icons.StyleClass.CLEAR01_CROSS)
-					.build()
-		),
-		ColourProperty.of
-		(
 			FxProperty.BORDER_COLOUR,
 			PaneStyle.ColourKey.PANE_BORDER,
 			CssSelector.builder()
 					.id(StyleConstants.NodeId.APP_MAIN_ROOT)
-					.desc(StyleClass.CONTROL_PANE)
+					.desc(StyleClass.MAIN_CONTROL_PANE)
 					.build()
 		)
 	);
@@ -257,42 +212,25 @@ public class AutoKeyTyperApp
 		RuleSetBuilder.create()
 				.selector(CssSelector.builder()
 						.id(StyleConstants.NodeId.APP_MAIN_ROOT)
-						.desc(StyleClass.CONTROL_PANE)
+						.desc(StyleClass.MAIN_CONTROL_PANE)
 						.build())
-				.borders(Side.BOTTOM)
-				.build(),
-		RuleSetBuilder.create()
-				.selector(CssSelector.builder()
-						.id(StyleConstants.NodeId.APP_MAIN_ROOT)
-						.desc(StyleClass.INPUT_FIELD)
-						.desc(FxStyleClass.TEXT)
-						.build())
-				.grayFontSmoothing()
+				.borders(Side.TOP)
 				.build()
 	);
 
 	/** CSS style classes. */
 	private interface StyleClass
 	{
-		String	CONTROL_PANE	= StyleConstants.CLASS_PREFIX + "control-pane";
-		String	INPUT_FIELD		= StyleConstants.CLASS_PREFIX + "input-field";
-	}
-
-	/** Keys of colours that are used in colour properties. */
-	private interface ColourKey
-	{
-		String	PREFIX	= StyleManager.colourKeyPrefix(MethodHandles.lookup().lookupClass().getEnclosingClass());
-
-		String	CLEAR_INPUT_BUTTON_CROSS	= PREFIX + "clearInputButton.cross";
-		String	CLEAR_INPUT_BUTTON_DISC		= PREFIX + "clearInputButton.disc";
+		String	MAIN_CONTROL_PANE	= StyleConstants.CLASS_PREFIX + "main-control-pane";
 	}
 
 	/** Keys of properties. */
 	private interface PropertyKey
 	{
 		String	APPEARANCE	= "appearance";
-		String	DELAY		= "delay";
 		String	MAIN_WINDOW	= "mainWindow";
+		String	PAGE		= "page";
+		String	PAGES		= "pages";
 		String	THEME		= "theme";
 	}
 
@@ -307,48 +245,38 @@ public class AutoKeyTyperApp
 	/** Error messages. */
 	private interface ErrorMsg
 	{
-		String	NO_AUXILIARY_DIRECTORY		= "The location of the auxiliary directory could not be determined.";
-		String	FAILED_TO_READ_KEY_MAP		= "Failed to read the key map.";
-		String	FAILED_TO_CREATE_ROBOT		= "Failed to create a robot.";
-		String	CHARACTERS_NOT_IN_KEY_MAP	= "The following characters cannot be mapped to key codes:";
+		String	NO_AUXILIARY_DIRECTORY	= "The location of the auxiliary directory could not be determined.";
+		String	FAILED_TO_READ_KEY_MAP	= "Failed to read the key map.";
+		String	FAILED_TO_CREATE_ROBOT	= "Failed to create a robot.";
 	}
-
-////////////////////////////////////////////////////////////////////////
-//  Class variables
-////////////////////////////////////////////////////////////////////////
-
-	private static	Map<Character, KeyMap.Key>	keyMap	= Collections.emptyMap();
 
 ////////////////////////////////////////////////////////////////////////
 //  Instance variables
 ////////////////////////////////////////////////////////////////////////
 
 	/** The properties of the build of this application. */
-	private	ResourceProperties	buildProperties;
+	private	ResourceProperties			buildProperties;
 
 	/** The string representation of the version of this application. */
-	private	String				versionStr;
+	private	String						versionStr;
 
 	/** The state of the main window. */
-	private	WindowState			mainWindowState;
-
-	/** The delay (in seconds) when generating key events. */
-	private	int					delay;
+	private	WindowState					mainWindowState;
 
 	/** The object that adds native key events to the platform's input queue. */
-	private	Robot				robot;
+	private	Robot						robot;
 
-	/** The <i>delay</i> spinner. */
-	private	IntRangeSpinner		delaySpinner;
+	/** A map from characters to key codes. */
+	private Map<Character, KeyMap.Key>	keyMap;
 
-	/** The <i>abort</i> button. */
-	private	Button				abortButton;
+	/** A map of pages of the UI. */
+	private Map<Page, IPage>			pages;
 
-	/** The <i>generate</i> button. */
-	private	Button				generateButton;
+	/** The current page. */
+	private	Page						page;
 
-	/** The timer that provides a delay of the chosen length when generating key events. */
-	private	Timeline			delayTimer;
+	/** The pane that contains the page spinner and the <i>exit</i> button. */
+	private	HBox						controlPane;
 
 ////////////////////////////////////////////////////////////////////////
 //  Constructors
@@ -460,7 +388,10 @@ public class AutoKeyTyperApp
 
 		// Initialise instance variables
 		mainWindowState = new WindowState(false, true);
-		delay = DEFAULT_DELAY;
+		pages = new EnumMap<>(Page.class);
+		for (Page page : Page.values())
+			pages.put(page, page.createPage());
+		page = Page.DELAYED;
 
 		// Read build properties
 		try
@@ -562,188 +493,83 @@ public class AutoKeyTyperApp
 			System.exit(1);
 		}
 
-		// Create control pane
-		GridPane controlPane = new GridPane();
-		controlPane.setHgap(CONTROL_PANE_H_GAP);
-		controlPane.setVgap(CONTROL_PANE_V_GAP);
-		controlPane.setAlignment(Pos.CENTER);
-		controlPane.setPadding(CONTROL_PANE_PADDING);
-		controlPane.setBorder(SceneUtils.createSolidBorder(getColour(PaneStyle.ColourKey.PANE_BORDER), Side.BOTTOM));
-		controlPane.getStyleClass().add(StyleClass.CONTROL_PANE);
-		VBox.setVgrow(controlPane, Priority.ALWAYS);
+		// Initialise 'Images' class
+		Images.init();
 
-		// Initialise column constraints
-		ColumnConstraints column = new ColumnConstraints();
-		column.setMinWidth(Region.USE_PREF_SIZE);
-		column.setHalignment(HPos.RIGHT);
-		controlPane.getColumnConstraints().add(column);
+		// Create procedure to enable/disable control pane
+		IProcedure1<Boolean> enableControlPane = enabled -> controlPane.setDisable(!enabled);
 
-		column = new ColumnConstraints();
-		column.setHalignment(HPos.LEFT);
-		controlPane.getColumnConstraints().add(column);
+		// Initialise pages
+		((DelayedPage)pages.get(Page.DELAYED)).init(robot, keyMap, enableControlPane);
+		((PeriodicPage)pages.get(Page.PERIODIC)).init(robot, enableControlPane);
+		((PreferencesPage)pages.get(Page.PREFERENCES)).init();
 
-		// Initialise row index
-		int row = 0;
+		// Create page pane
+		StackPane pagePane = new StackPane();
+		pagePane.setPadding(PAGE_PANE_PADDING);
 
-		// Create text field: input
-		TextField inputField = new TextField();
-		inputField.setFont(Fonts.monoFont());
-		inputField.setPrefColumnCount(INPUT_FIELD_NUM_COLUMNS);
-		inputField.setOnAction(event -> generateButton.fire());
-		inputField.getStyleClass().add(StyleClass.INPUT_FIELD);
-		HBox.setHgrow(inputField, Priority.ALWAYS);
-
-		// Create button: clear input
-		Group clearIcon = Icons.clear01(getColour(ColourKey.CLEAR_INPUT_BUTTON_DISC),
-										getColour(ColourKey.CLEAR_INPUT_BUTTON_CROSS));
-		GraphicButton clearInputButton = new GraphicButton(clearIcon, CLEAR_INPUT_STR);
-		clearInputButton.setOnAction(event ->
+		// Add pages to page pane
+		for (Page page : pages.keySet())
 		{
-			Platform.runLater(() ->
-			{
-				inputField.clear();
-				inputField.requestFocus();
-			});
-		});
+			Pane pane = pages.get(page).pane();
+			pane.setUserData(page.key);
+			pane.setVisible(false);
+			pagePane.getChildren().add(pane);
+		}
 
-		// Create pane: input
-		HBox inputPane = new HBox(4.0, inputField, clearInputButton);
-		inputPane.setAlignment(Pos.CENTER_LEFT);
-		controlPane.addRow(row++, new Label(INPUT_STR), inputPane);
-		GridPane.setHgrow(inputPane, Priority.ALWAYS);
-
-		// Create spinner: delay
-		delaySpinner = IntRangeSpinner.leftRightH(HPos.CENTER, false, MIN_DELAY, MAX_DELAY, delay, "000", null);
-
-		// Create pane: delay
-		HBox delayPane = new HBox(5.0, delaySpinner, new Label(SECONDS_STR));
-		delayPane.setAlignment(Pos.CENTER_LEFT);
-		controlPane.addRow(row++, new Label(DELAY_STR), delayPane);
-
-		// Create button: preferences
-		Button preferencesButton = Buttons.hNoShrink(PREFERENCES_STR);
-		preferencesButton.setOnAction(event -> PreferencesDialog.show(primaryStage));
-
-		// Create procedure to update buttons
-		IProcedure0 updateButtons = () ->
+		// Create procedure to update page
+		IProcedure1<Page> updatePage = page ->
 		{
-			boolean noInput = inputField.getText().isEmpty();
-			clearInputButton.setDisable((delayTimer != null) || noInput);
-			preferencesButton.setDisable(delayTimer != null);
-			abortButton.setDisable(delayTimer == null);
-			generateButton.setDisable((delayTimer != null) || noInput);
+			// Notify current page that it is being exited
+			pages.get(this.page).onExiting();
+
+			// Update current page
+			this.page = page;
+
+			// Show current page; hide other pages
+			for (Node child : pagePane.getChildren())
+				child.setVisible(page.key.equals(child.getUserData()));
 		};
 
-		// Create button: abort
-		abortButton = Buttons.hExpansive(ABORT_STR);
-		abortButton.setOnAction(event ->
-		{
-			// Stop delay timer and invalidate it
-			if (delayTimer != null)
-			{
-				// Stop delay timer
-				delayTimer.stop();
+		// Spinner: page
+		CollectionSpinner<Page> pageSpinner =
+				CollectionSpinner.leftRightH(HPos.CENTER, true, Page.class, page, null, null);
+		pageSpinner.itemProperty().addListener((observable, oldPage, page) -> updatePage.invoke(page));
 
-				// Invalidate delay timer
-				delayTimer = null;
-			}
+		// Button: exit
+		Button exitButton = Buttons.hNoShrink(EXIT_STR);
+		exitButton.setPadding(BUTTON_PADDING);
+		exitButton.setOnAction(event ->
+				primaryStage.fireEvent(new WindowEvent(primaryStage, WindowEvent.WINDOW_CLOSE_REQUEST)));
 
-			// Update buttons
-			updateButtons.invoke();
-		});
-
-		// Create button: generate
-		generateButton = Buttons.hExpansive(GENERATE_STR);
-		generateButton.setOnAction(event ->
-		{
-			// Get text from input field
-			String text = inputField.getText();
-
-			// If there is text, generate key presses and releases for its characters after a delay
-			if (!text.isEmpty())
-			{
-				// Create list of characters of input text that do not appear in key map
-				List<Character> unmappedChars = new ArrayList<>();
-				for (int i = 0; i < text.length(); i++)
-				{
-					char ch = text.charAt(i);
-					if (!keyMap.containsKey(ch))
-						unmappedChars.add(ch);
-				}
-
-				// Report characters not in key map
-				if (!unmappedChars.isEmpty())
-				{
-					StringBuilder buffer = new StringBuilder(256);
-					buffer.append(ErrorMsg.CHARACTERS_NOT_IN_KEY_MAP);
-					for (int i = 0; i < unmappedChars.size(); i++)
-					{
-						if (i % 10 == 0)
-							buffer.append('\n');
-						else
-							buffer.append("  ");
-						buffer.append(unmappedChars.get(i));
-					}
-					ErrorDialog.show(primaryStage, GENERATE_STR, buffer.toString());
-					return;
-				}
-
-				// Generate key presses and releases after a delay
-				delayTimer = new Timeline(new KeyFrame(Duration.seconds((double)delaySpinner.getValue()), event0 ->
-				{
-					// Invalidate delay timer
-					delayTimer = null;
-
-					// Generate key presses and releases
-					for (int i = 0; i < text.length(); i++)
-					{
-						char ch = text.charAt(i);
-						KeyMap.Key key = keyMap.get(ch);
-						if (key != null)
-							key.type(robot);
-					}
-
-					// Update buttons
-					updateButtons.invoke();
-				}));
-
-				// Update buttons
-				updateButtons.invoke();
-
-				// Request focus on 'abort' button
-				abortButton.requestFocus();
-
-				// Start delay
-				delayTimer.play();
-			}
-		});
-
-		// Update buttons when content of input field changes
-		inputField.textProperty().addListener(observable -> updateButtons.invoke());
-
-		// Update buttons
-		updateButtons.invoke();
-
-		// Create right button pane
-		TilePane rightButtonPane = new TilePane(BUTTON_PANE_H_GAP, BUTTON_PANE_V_GAP, abortButton, generateButton);
-		rightButtonPane.setPrefColumns(rightButtonPane.getChildren().size());
-		rightButtonPane.setAlignment(Pos.CENTER);
-
-		// Create button pane
-		HBox buttonPane = new HBox(preferencesButton, FillerUtils.hBoxFiller(16.0), rightButtonPane);
-		buttonPane.setAlignment(Pos.CENTER);
-		buttonPane.setPadding(BUTTON_PANE_PADDING);
+		// Create control pane
+		controlPane = new HBox(CONTROL_PANE_H_GAP, Labels.hNoShrink(PAGE_STR), pageSpinner,
+							   FillerUtils.hBoxFiller(10.0), exitButton);
+		controlPane.setAlignment(Pos.CENTER);
+		controlPane.setPadding(CONTROL_PANE_PADDING);
+		controlPane.setBorder(SceneUtils.createSolidBorder(getColour(PaneStyle.ColourKey.PANE_BORDER), Side.TOP));
+		controlPane.getStyleClass().add(StyleClass.MAIN_CONTROL_PANE);
 
 		// Create main pane
-		VBox mainPane = new VBox(controlPane, buttonPane);
+		VBox mainPane = new VBox(4.0, pagePane, controlPane);
 		mainPane.setId(StyleConstants.NodeId.APP_MAIN_ROOT);
 		mainPane.setAlignment(Pos.CENTER);
+
+		// Show initial page
+		updatePage.invoke(page);
 
 		// Create scene
 		Scene scene = new Scene(mainPane);
 
 		// Add style sheet to scene
 		styleManager.addStyleSheet(scene);
+
+		// Update images of image buttons when theme changes
+		StyleManager.INSTANCE.themeProperty().addListener(observable ->
+		{
+			ImageData.updateImages();
+			ImageDataButton.updateButtons();
+		});
 
 		// Set properties of main window
 		primaryStage.setTitle(LONG_NAME + " " + versionStr);
@@ -833,6 +659,10 @@ public class AutoKeyTyperApp
 
 		// Display main window
 		primaryStage.show();
+
+		// Notify pages that their containing window has been shown
+		for (Page page : pages.keySet())
+			pages.get(page).onWindowShown();
 	}
 
 	//------------------------------------------------------------------
@@ -864,10 +694,17 @@ public class AutoKeyTyperApp
 		if (!windowStateNode.isEmpty())
 			rootNode.add(PropertyKey.MAIN_WINDOW, windowStateNode);
 
-		// Encode delay
-		if (delaySpinner != null)
-			delay = delaySpinner.getValue();
-		rootNode.addInt(PropertyKey.DELAY, delay);
+		// Encode page
+		rootNode.addString(PropertyKey.PAGE, page.key);
+
+		// Encode state of pages
+		MapNode pagesNode = rootNode.addMap(PropertyKey.PAGES);
+		for (Page page : pages.keySet())
+		{
+			MapNode pageNode = pages.get(page).encodeState();
+			if (pageNode != null)
+				pagesNode.add(page.key, pageNode);
+		}
 	}
 
 	//------------------------------------------------------------------
@@ -895,11 +732,116 @@ public class AutoKeyTyperApp
 		if (rootNode.hasMap(key))
 			mainWindowState.decodeTree(rootNode.getMapNode(key));
 
-		// Decode delay
-		delay = rootNode.getInt(PropertyKey.DELAY, DEFAULT_DELAY);
+		// Decode page
+		page = rootNode.getEnumValue(Page.class, PropertyKey.PAGE, p -> p.key, Page.DELAYED);
+
+		// Decode state of pages
+		key = PropertyKey.PAGES;
+		if (rootNode.hasMap(key))
+		{
+			MapNode pagesNode = rootNode.getMapNode(key);
+			for (Page page : pages.keySet())
+			{
+				if (pagesNode.hasMap(page.key))
+					pages.get(page).decodeState(pagesNode.getMapNode(page.key));
+			}
+		}
 	}
 
 	//------------------------------------------------------------------
+
+////////////////////////////////////////////////////////////////////////
+//  Enumerated types
+////////////////////////////////////////////////////////////////////////
+
+
+	// ENUMERATION: PAGE
+
+
+	private enum Page
+	{
+
+	////////////////////////////////////////////////////////////////////
+	//  Constants
+	////////////////////////////////////////////////////////////////////
+
+		DELAYED
+		(
+			"Delayed"
+		)
+		{
+			protected IPage createPage()
+			{
+				return new DelayedPage();
+			}
+		},
+
+		PERIODIC
+		(
+			"Periodic"
+		)
+		{
+			protected IPage createPage()
+			{
+				return new PeriodicPage();
+			}
+		},
+
+		PREFERENCES
+		(
+			"Preferences"
+		)
+		{
+			protected IPage createPage()
+			{
+				return new PreferencesPage();
+			}
+		};
+
+	////////////////////////////////////////////////////////////////////
+	//  Instance variables
+	////////////////////////////////////////////////////////////////////
+
+		private	String	key;
+		private	String	text;
+
+	////////////////////////////////////////////////////////////////////
+	//  Constructors
+	////////////////////////////////////////////////////////////////////
+
+		private Page(
+			String	text)
+		{
+			// Initialise instance variables
+			key = name().toLowerCase();
+			this.text = text;
+		}
+
+		//--------------------------------------------------------------
+
+	////////////////////////////////////////////////////////////////////
+	//  Abstract methods
+	////////////////////////////////////////////////////////////////////
+
+		protected abstract IPage createPage();
+
+		//--------------------------------------------------------------
+
+	////////////////////////////////////////////////////////////////////
+	//  Instance methods : overriding methods
+	////////////////////////////////////////////////////////////////////
+
+		@Override
+		public String toString()
+		{
+			return text;
+		}
+
+		//--------------------------------------------------------------
+
+	}
+
+	//==================================================================
 
 ////////////////////////////////////////////////////////////////////////
 //  Member classes : non-inner classes

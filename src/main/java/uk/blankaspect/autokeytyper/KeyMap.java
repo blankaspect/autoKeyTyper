@@ -26,13 +26,12 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 
 import java.util.ArrayDeque;
+import java.util.Arrays;
 import java.util.Deque;
 import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-
-import java.util.stream.Stream;
 
 import uk.blankaspect.common.exception2.BaseException;
 
@@ -285,10 +284,7 @@ public class KeyMap
 		private static ModifierKey forKey(
 			String	key)
 		{
-			return Stream.of(values())
-					.filter(value -> value.key.equals(key))
-					.findFirst()
-					.orElse(null);
+			return Arrays.stream(values()).filter(value -> value.key.equals(key)).findFirst().orElse(null);
 		}
 
 		//--------------------------------------------------------------

@@ -54,11 +54,27 @@
     <div class="section" id="description">
       <p class="wrap">
         AutoKeyTyper is a <a class="external"
-        href="https://en.wikipedia.org/wiki/JavaFX">JavaFX</a> application that can generate a
-        sequence of native key-press events for the characters in a text field.  Its intended
-        use is to paste text indirectly into a field of a web form that doesn&apos;t allow text
-        to be pasted directly into it.  No other uses for it suggest themselves: it&apos;s a
-        one-trick pony, and it&apos;s probably not a trick you&apos;d need very often.
+        href="https://en.wikipedia.org/wiki/JavaFX">JavaFX</a> application with a very small
+        repertoire:
+      </p>
+      <ol class="list">
+        <li class="wrap">
+          It can generate a sequence of native <i>key typed</i> events for some chosen input
+          text after a specified delay.  The events are added to the platform&apos;s input
+          queue, which is equivalent to typing the input text on a keyboard.
+        </li>
+        <li class="wrap">
+          It can periodically generate a pair of native <i>key pressed</i> and <i>key
+          released</i> events for a specified key, with a specified interval between key
+          presses.  This is equivalent to repeatedly pressing and releasing a key on a keyboard
+          at regular intervals.
+        </li>
+      </ol>
+      <p class="wrap">
+        The first ability may be used to enter text into an input field (for example, a password
+        field on a web page) that doesn&apos;t allow text to be pasted into it from the system
+        clipboard.  The second ability may be used to prevent a computer from entering a
+        power-saving sleep state while a non-interactive or unattended application is running.
       </p>
       <p class="wrap">
         This is a preliminary document; more information on this project will be along later.
@@ -102,7 +118,7 @@
     <div id="lastModified">
       <div>
         <div>
-          Last modified: 2025-07-10
+          Last modified: 2025-11-26
         </div>
         <div class="image">
           <a class="hideHover" href="http://validator.w3.org/check?uri=referer">
