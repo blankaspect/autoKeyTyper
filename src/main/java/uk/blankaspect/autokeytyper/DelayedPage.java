@@ -231,9 +231,8 @@ public class DelayedPage
 
 	static
 	{
-		// Register the style properties of this class and its dependencies with the style manager
-		StyleManager.INSTANCE.register(DelayedPage.class, COLOUR_PROPERTIES, RULE_SETS,
-									   PaneStyle.class);
+		// Register the style properties of this class with the style manager
+		StyleManager.INSTANCE.register(DelayedPage.class, COLOUR_PROPERTIES, RULE_SETS);
 	}
 
 ////////////////////////////////////////////////////////////////////////

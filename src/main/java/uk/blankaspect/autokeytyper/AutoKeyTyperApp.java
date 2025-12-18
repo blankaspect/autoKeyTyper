@@ -449,8 +449,8 @@ public class AutoKeyTyperApp
 			styleManager.setStyleSheetFilename(STYLE_SHEET_FILENAME);
 		}
 
-		// Register the style properties of this class and its dependencies with the style manager
-		styleManager.register(getClass(), COLOUR_PROPERTIES, RULE_SETS, PaneStyle.class);
+		// Register the style properties of this class with the style manager
+		styleManager.register(getClass(), COLOUR_PROPERTIES, RULE_SETS);
 
 		// Create robot to generate key events
 		try
