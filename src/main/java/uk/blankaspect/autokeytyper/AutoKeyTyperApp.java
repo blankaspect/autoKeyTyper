@@ -157,11 +157,14 @@ public class AutoKeyTyperApp
 	/** The filename of the CSS style sheet. */
 	private static final	String	STYLE_SHEET_FILENAME	= NAME_KEY + "-%02d.css";
 
-	/** The delay (in milliseconds) in a <i>WINDOW_SHOWN</i> event handler. */
-	private static final	int		WINDOW_SHOWN_DELAY	= 50;
-
-	/** The delay (in milliseconds) before making the main window visible by restoring its opacity. */
-	private static final	int		WINDOW_VISIBLE_DELAY	= 50;
+	/** A map from system-property keys to the default values of the corresponding delays (in milliseconds) in the
+		<i>WINDOW_SHOWN</i> event handler of the main window. */
+	private static final	Map<String, Integer>	MAIN_WINDOW_DELAYS	= Map.of
+	(
+		SystemPropertyKey.MAIN_WINDOW_DELAY_SIZE,     50,
+		SystemPropertyKey.MAIN_WINDOW_DELAY_LOCATION, 25,
+		SystemPropertyKey.MAIN_WINDOW_DELAY_OPACITY,  25
+	);
 
 	/** The margins that are applied to the visual bounds of each screen when determining whether the saved location of
 		the main window is within a screen. */
@@ -232,9 +235,11 @@ public class AutoKeyTyperApp
 	/** Keys of system properties. */
 	private interface SystemPropertyKey
 	{
-		String	KEY_MAP					= "keyMap";
-		String	USE_STYLE_SHEET_FILE	= "useStyleSheetFile";
-		String	WINDOW_SHOWN_DELAY		= "windowShownDelay";
+		String	KEY_MAP						= "keyMap";
+		String	MAIN_WINDOW_DELAY_LOCATION	= "mainWindowDelay.location";
+		String	MAIN_WINDOW_DELAY_OPACITY	= "mainWindowDelay.opacity";
+		String	MAIN_WINDOW_DELAY_SIZE		= "mainWindowDelay.size";
+		String	USE_STYLE_SHEET_FILE		= "useStyleSheetFile";
 	}
 
 	/** Error messages. */
@@ -307,15 +312,19 @@ public class AutoKeyTyperApp
 	//------------------------------------------------------------------
 
 	/**
-	 * Returns the delay (in milliseconds) in a <i>WINDOW_SHOWN</i> event handler.
+	 * Returns the delay (in milliseconds) that is defined the system property with the specified key.
 	 *
-	 * @return the delay (in milliseconds) in a <i>WINDOW_SHOWN</i> event handler.
+	 * @param  key
+	 *           the key of the system property.
+	 * @return the delay (in milliseconds) that is defined the system property whose key is {@code key}, or a default
+	 *         value if there is no such property or the property value is not a valid integer.
 	 */
 
-	private static int getWindowShownDelay()
+	private static int getDelay(
+		String	key)
 	{
-		int delay = WINDOW_SHOWN_DELAY;
-		String value = System.getProperty(SystemPropertyKey.WINDOW_SHOWN_DELAY);
+		int delay = MAIN_WINDOW_DELAYS.get(key);
+		String value = System.getProperty(key);
 		if (value != null)
 		{
 			try
@@ -577,8 +586,8 @@ public class AutoKeyTyperApp
 		// When main window is shown, set its width and location after a delay
 		primaryStage.setOnShown(event ->
 		{
-			// Set width and location of main window after a delay
-			ExecUtils.afterDelay(getWindowShownDelay(), () ->
+			// Set width of main window after a delay
+			ExecUtils.afterDelay(getDelay(SystemPropertyKey.MAIN_WINDOW_DELAY_SIZE), () ->
 			{
 				// Get size of window from saved state
 				Dimension2D size = mainWindowState.getSize();
@@ -590,37 +599,41 @@ public class AutoKeyTyperApp
 					primaryStage.setHeight(primaryStage.getHeight());	// required for Linux/GNOME
 				}
 
-				// Get location of window from saved state
-				Point2D location = mainWindowState.getLocation();
-
-				// Invalidate location if top centre of window is not within a screen
-				double width = primaryStage.getWidth();
-				if ((location != null)
-						&& !SceneUtils.isWithinScreen(location.getX() + 0.5 * width, location.getY(), SCREEN_MARGINS))
-					location = null;
-
-				// If there is no location, centre window within primary screen
-				if (location == null)
-					location = SceneUtils.centreInScreen(width, primaryStage.getHeight());
-
-				// Set location of window
-				primaryStage.setX(location.getX());
-				primaryStage.setY(location.getY());
-
-				// Prevent height of window from changing
-				double height = Math.ceil(primaryStage.getHeight());
-				primaryStage.setMinHeight(height);
-				primaryStage.setMaxHeight(height);
-
-				// Perform remaining initialisation after a delay
-				ExecUtils.afterDelay(WINDOW_VISIBLE_DELAY, () ->
+				// Set location of main window after a delay
+				ExecUtils.afterDelay(getDelay(SystemPropertyKey.MAIN_WINDOW_DELAY_LOCATION), () ->
 				{
-					// Make window visible
-					primaryStage.setOpacity(1.0);
+					// Get location of window from saved state
+					Point2D location = mainWindowState.getLocation();
 
-					// Report any configuration error
-					if (vars.configException != null)
-						ErrorDialog.show(primaryStage, SHORT_NAME + " : " + CONFIG_ERROR_STR, vars.configException);
+					// Invalidate location if top centre of window is not within a screen
+					double width = primaryStage.getWidth();
+					if ((location != null) && !SceneUtils.isWithinScreen(location.getX() + 0.5 * width, location.getY(),
+																		 SCREEN_MARGINS))
+						location = null;
+
+					// If there is no location, centre window within primary screen
+					if (location == null)
+						location = SceneUtils.centreInScreen(width, primaryStage.getHeight());
+
+					// Set location of window
+					primaryStage.setX(location.getX());
+					primaryStage.setY(location.getY());
+
+					// Perform remaining initialisation after a delay
+					ExecUtils.afterDelay(getDelay(SystemPropertyKey.MAIN_WINDOW_DELAY_OPACITY), () ->
+					{
+						// Make window visible
+						primaryStage.setOpacity(1.0);
+
+						// Prevent height of window from changing
+						double height = Math.ceil(primaryStage.getHeight());
+						primaryStage.setMinHeight(height);
+						primaryStage.setMaxHeight(height);
+
+						// Report any configuration error
+						if (vars.configException != null)
+							ErrorDialog.show(primaryStage, SHORT_NAME + " : " + CONFIG_ERROR_STR, vars.configException);
+					});
 				});
 			});
 		});
