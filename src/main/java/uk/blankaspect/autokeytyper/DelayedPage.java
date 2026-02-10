@@ -200,7 +200,8 @@ public class DelayedPage
 	/** Error messages. */
 	private interface ErrorMsg
 	{
-		String	CHARACTERS_NOT_IN_KEY_MAP	= "The following characters cannot be mapped to key codes:";
+		String	CHARACTERS_NOT_IN_KEY_MAP =
+				"The following characters cannot be mapped to key codes:";
 	}
 
 ////////////////////////////////////////////////////////////////////////
@@ -285,7 +286,7 @@ public class DelayedPage
 	public MapNode encodeState()
 	{
 		// Update state
-		state.delay = delaySpinner.getValue();
+		state.delay = delaySpinner.value();
 
 		// Encode state and return result
 		return state.encodeTree();
@@ -303,7 +304,7 @@ public class DelayedPage
 	//------------------------------------------------------------------
 
 	@Override
-	public void onExiting()
+	public void onDeselecting()
 	{
 		abortButton.fire();
 	}
@@ -445,7 +446,7 @@ public class DelayedPage
 				}
 
 				// Create timer to generate key presses after a delay
-				timer = new Timeline(new KeyFrame(Duration.seconds((double)delaySpinner.getValue()), event0 ->
+				timer = new Timeline(new KeyFrame(Duration.seconds((double)delaySpinner.value()), event0 ->
 				{
 					// Invalidate delay timer
 					timer = null;

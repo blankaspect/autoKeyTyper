@@ -82,6 +82,8 @@ import uk.blankaspect.ui.jfx.button.ImageDataButton;
 
 import uk.blankaspect.ui.jfx.container.PaneStyle;
 
+import uk.blankaspect.ui.jfx.dialog.ErrorDialog;
+
 import uk.blankaspect.ui.jfx.font.FontUtils;
 
 import uk.blankaspect.ui.jfx.icon.Icons;
@@ -166,6 +168,7 @@ public class PeriodicPage
 	private static final	String	INTERVAL_STR	= "Interval";
 	private static final	String	START_STR		= "Start";
 	private static final	String	STOP_STR		= "Stop";
+	private static final	String	ERROR_STR		= "Error";
 
 	/** The pseudo-class that is associated with the <i>highlighted</i> state. */
 	private static final	PseudoClass	HIGHLIGHTED_PSEUDO_CLASS	=
@@ -289,6 +292,12 @@ public class PeriodicPage
 		String	STATUS_PANE_BACKGROUND_HIGHLIGHTED	= PREFIX + "statusPane.background.highlighted";
 	}
 
+	/** Error messages. */
+	private interface ErrorMsg
+	{
+		String	PROBLEM_WITH_KEY_EVENT_GENERATOR	= "There was a problem with the key-event generator.";
+	}
+
 ////////////////////////////////////////////////////////////////////////
 //  Instance variables
 ////////////////////////////////////////////////////////////////////////
@@ -350,7 +359,7 @@ public class PeriodicPage
 		for (KeyCode keyCode : KeyCode.values())
 		{
 			int code = keyCode.getCode();
-			if (code >= 0)
+			if (code > 0)
 				KEY_INFOS.add(new KeyInfo(keyCode.name(), keyCode.getName(), code));
 		}
 	}
@@ -441,7 +450,7 @@ public class PeriodicPage
 	//------------------------------------------------------------------
 
 	@Override
-	public void onExiting()
+	public void onDeselecting()
 	{
 		stopButton.fire();
 	}
@@ -453,6 +462,7 @@ public class PeriodicPage
 	{
 		if (scene == null)
 		{
+			// Get scene
 			scene = pane.getScene();
 
 			// Handle 'key pressed' events
@@ -473,7 +483,7 @@ public class PeriodicPage
 				}
 			});
 
-			//
+			// Start/pause timer when window gains/loses focus or when 'iconified' state of window changes
 			if (scene.getWindow() instanceof Stage window)
 			{
 				// Create procedure to start or pause timer
@@ -500,6 +510,7 @@ public class PeriodicPage
 			}
 		}
 
+		// Request focus on interval-value spinner
 		intervalValueSpinner.requestFocus();
 	}
 
@@ -593,8 +604,8 @@ public class PeriodicPage
 															 state.intervalValue, INTERVAL_VALUE_SPINNER_NUM_DIGITS);
 
 		// Spinner: interval unit
-		intervalUnitSpinner = CollectionSpinner.leftRightH(HPos.CENTER, true, TimeUnit.class, state.intervalUnit, null,
-														   null);
+		intervalUnitSpinner =
+				CollectionSpinner.leftRightH(HPos.CENTER, true, TimeUnit.class, state.intervalUnit, null, null);
 
 		// Pane: interval
 		HBox intervalPane = new HBox(CONTROL_PANE_H_GAP, intervalValueSpinner, intervalUnitSpinner);
@@ -643,8 +654,30 @@ public class PeriodicPage
 				timer = new Timeline(new KeyFrame(Duration.seconds((double)interval), event0 ->
 				{
 					// Generate key press and release
-					robot.keyPress(keyInfo.code);
-					robot.keyRelease(keyInfo.code);
+					try
+					{
+						robot.keyPress(keyInfo.code);
+						robot.keyRelease(keyInfo.code);
+					}
+					catch (Exception e)
+					{
+						// Stop timer
+						timer.stop();
+
+						// Report error
+						Platform.runLater(() ->
+						{
+							// Display error dialog
+							ErrorDialog.show(SceneUtils.getWindow(startButton), ERROR_STR,
+											 ErrorMsg.PROBLEM_WITH_KEY_EVENT_GENERATOR, e);
+
+							// Fire 'stop' button
+							stopButton.fire();
+						});
+
+						// Return from event handler
+						return;
+					}
 
 					// Update time of last key press
 					keyPressTime = LocalTime.now();

@@ -66,15 +66,32 @@ public class KeyMap
 	/** Error messages. */
 	private interface ErrorMsg
 	{
-		String	MALFORMED_ENTRY				= "The map entry is malformed.";
-		String	MALFORMED_CHARACTER			= "The character '%s' is malformed.";
-		String	ILLEGAL_CHARACTER			= "'%s' is not a legal character.";
-		String	MALFORMED_CODE_POINT		= "The code point '%s' is malformed.";
-		String	ILLEGAL_CODE_POINT			= "'%s' is not a legal code point.";
-		String	CODE_POINT_OUT_OF_BOUNDS	= "The code point %s is out of bounds.";
-		String	ILLEGAL_KEY_CODE			= "'%s' is not a legal key code.";
-		String	UNRECOGNISED_KEY_CODE		= "'%s' is not a recognised key code.";
-		String	UNRECOGNISED_MODIFIER_KEY	= "'%s' is not a recognised modifier key.";
+		String	MALFORMED_ENTRY =
+				"The map entry is malformed.";
+
+		String	MALFORMED_CHARACTER =
+				"The character '%s' is malformed.";
+
+		String	ILLEGAL_CHARACTER =
+				"'%s' is not a legal character.";
+
+		String	MALFORMED_CODE_POINT =
+				"The code point '%s' is malformed.";
+
+		String	ILLEGAL_CODE_POINT =
+				"'%s' is not a legal code point.";
+
+		String	CODE_POINT_OUT_OF_BOUNDS =
+				"The code point %s is out of bounds.";
+
+		String	ILLEGAL_KEY_CODE =
+				"'%s' is not a legal key code.";
+
+		String	UNRECOGNISED_KEY_CODE =
+				"'%s' is not a recognised key code.";
+
+		String	UNRECOGNISED_MODIFIER_KEY =
+				"'%s' is not a recognised modifier key.";
 	}
 
 ////////////////////////////////////////////////////////////////////////

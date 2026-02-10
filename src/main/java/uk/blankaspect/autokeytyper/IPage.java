@@ -73,10 +73,10 @@ public interface IPage
 	//------------------------------------------------------------------
 
 	/**
-	 * Notifies this page that it is about to be exited.  The default implementation of this method does nothing.
+	 * Notifies this page that it is about to be deselected.  The default implementation of this method does nothing.
 	 */
 
-	default void onExiting()
+	default void onDeselecting()
 	{
 		// do nothing
 	}

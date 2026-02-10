@@ -245,9 +245,14 @@ public class AutoKeyTyperApp
 	/** Error messages. */
 	private interface ErrorMsg
 	{
-		String	NO_AUXILIARY_DIRECTORY	= "The location of the auxiliary directory could not be determined.";
-		String	FAILED_TO_READ_KEY_MAP	= "Failed to read the key map.";
-		String	FAILED_TO_CREATE_ROBOT	= "Failed to create a robot.";
+		String	NO_AUXILIARY_DIRECTORY =
+				"The location of the auxiliary directory could not be determined.";
+
+		String	FAILED_TO_READ_KEY_MAP =
+				"Failed to read the key map.";
+
+		String	FAILED_TO_CREATE_ROBOT =
+				"Failed to create a robot.";
 	}
 
 ////////////////////////////////////////////////////////////////////////
@@ -524,8 +529,8 @@ public class AutoKeyTyperApp
 		// Create procedure to update page
 		IProcedure1<Page> updatePage = page ->
 		{
-			// Notify current page that it is being exited
-			pages.get(this.page).onExiting();
+			// Notify current page that it is being deselected
+			pages.get(this.page).onDeselecting();
 
 			// Update current page
 			this.page = page;
@@ -626,7 +631,7 @@ public class AutoKeyTyperApp
 						primaryStage.setOpacity(1.0);
 
 						// Prevent height of window from changing
-						double height = Math.ceil(primaryStage.getHeight());
+						double height = primaryStage.getHeight();
 						primaryStage.setMinHeight(height);
 						primaryStage.setMaxHeight(height);
 
