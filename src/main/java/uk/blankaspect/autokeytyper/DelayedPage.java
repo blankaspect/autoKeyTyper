@@ -40,6 +40,7 @@ import javafx.scene.Group;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
+import javafx.scene.control.TextFormatter;
 
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
@@ -58,6 +59,8 @@ import uk.blankaspect.common.basictree.MapNode;
 import uk.blankaspect.common.css.CssRuleSet;
 import uk.blankaspect.common.css.CssSelector;
 
+import uk.blankaspect.common.function.IFunction0;
+import uk.blankaspect.common.function.IFunction1;
 import uk.blankaspect.common.function.IProcedure0;
 import uk.blankaspect.common.function.IProcedure1;
 
@@ -69,8 +72,11 @@ import uk.blankaspect.ui.jfx.container.PaneStyle;
 import uk.blankaspect.ui.jfx.dialog.ErrorDialog;
 
 import uk.blankaspect.ui.jfx.font.Fonts;
+import uk.blankaspect.ui.jfx.font.FontUtils;
 
 import uk.blankaspect.ui.jfx.icon.Icons;
+
+import uk.blankaspect.ui.jfx.label.Labels;
 
 import uk.blankaspect.ui.jfx.scene.SceneUtils;
 
@@ -82,6 +88,11 @@ import uk.blankaspect.ui.jfx.style.FxStyleClass;
 import uk.blankaspect.ui.jfx.style.RuleSetBuilder;
 import uk.blankaspect.ui.jfx.style.StyleConstants;
 import uk.blankaspect.ui.jfx.style.StyleManager;
+
+import uk.blankaspect.ui.jfx.text.Text2;
+import uk.blankaspect.ui.jfx.text.TextUtils;
+
+import uk.blankaspect.ui.jfx.textfield.FilterFactory;
 
 //----------------------------------------------------------------------
 
@@ -109,11 +120,11 @@ public class DelayedPage
 	/** The preferred number of columns of the input field. */
 	private static final	int		INPUT_FIELD_NUM_COLUMNS	= 40;
 
-	/** The horizontal gap between adjacent components of the control pane. */
-	private static final	double	CONTROL_PANE_H_GAP	= 6.0;
+	/** The horizontal gap between adjacent components in a container. */
+	private static final	double	CONTROL_H_GAP	= 6.0;
 
-	/** The vertical gap between adjacent components of the control pane. */
-	private static final	double	CONTROL_PANE_V_GAP	= 8.0;
+	/** The vertical gap between adjacent components in a container. */
+	private static final	double	CONTROL_V_GAP	= 8.0;
 
 	/** The padding around the control pane. */
 	private static final	Insets	CONTROL_PANE_PADDING	= new Insets(8.0, 8.0, 8.0, 12.0);
@@ -132,6 +143,10 @@ public class DelayedPage
 	private static final	String	CLEAR_INPUT_STR	= "Clear input";
 	private static final	String	DELAY_STR		= "Delay";
 	private static final	String	SECONDS_STR		= "seconds";
+	private static final	String	ALIASES_STR		= "Aliases";
+	private static final	String	TAB_STR			= "Tab";
+	private static final	String	ENTER_STR		= "Enter";
+	private static final	String	KEY_STR			= " key";
 	private static final	String	ABORT_STR		= "Abort";
 	private static final	String	GENERATE_STR	= "Generate";
 
@@ -154,6 +169,15 @@ public class DelayedPage
 			CssSelector.builder()
 					.cls(StyleClass.DELAYED_PAGE)
 					.desc(Icons.StyleClass.CLEAR01_CROSS)
+					.build()
+		),
+		ColourProperty.of
+		(
+			FxProperty.FILL,
+			ColourKey.ALIAS_KEY_TEXT,
+			CssSelector.builder()
+					.cls(StyleClass.DELAYED_PAGE)
+					.desc(StyleClass.ALIAS_KEY_TEXT)
 					.build()
 		),
 		ColourProperty.of
@@ -183,6 +207,7 @@ public class DelayedPage
 	/** CSS style classes. */
 	private interface StyleClass
 	{
+		String	ALIAS_KEY_TEXT	= StyleConstants.CLASS_PREFIX + "alias-key-text";
 		String	CONTROL_PANE	= StyleConstants.CLASS_PREFIX + "control-pane";
 		String	DELAYED_PAGE	= StyleConstants.CLASS_PREFIX + "delayed-page";
 		String	INPUT_FIELD		= StyleConstants.CLASS_PREFIX + "input-field";
@@ -193,6 +218,7 @@ public class DelayedPage
 	{
 		String	PREFIX	= StyleManager.colourKeyPrefix(MethodHandles.lookup().lookupClass().getEnclosingClass());
 
+		String	ALIAS_KEY_TEXT				= PREFIX + "aliasKeyText";
 		String	CLEAR_INPUT_BUTTON_CROSS	= PREFIX + "clearInputButton.cross";
 		String	CLEAR_INPUT_BUTTON_DISC		= PREFIX + "clearInputButton.disc";
 	}
@@ -322,8 +348,8 @@ public class DelayedPage
 	{
 		// Create control pane
 		GridPane controlPane = new GridPane();
-		controlPane.setHgap(CONTROL_PANE_H_GAP);
-		controlPane.setVgap(CONTROL_PANE_V_GAP);
+		controlPane.setHgap(CONTROL_H_GAP);
+		controlPane.setVgap(CONTROL_V_GAP);
 		controlPane.setAlignment(Pos.CENTER);
 		controlPane.setPadding(CONTROL_PANE_PADDING);
 		controlPane.setBorder(SceneUtils.createSolidBorder(getColour(PaneStyle.ColourKey.PANE_BORDER)));
@@ -343,7 +369,7 @@ public class DelayedPage
 		// Initialise row index
 		int row = 0;
 
-		// Create text field: input
+		// Text field: input
 		TextField inputField = new TextField();
 		inputField.setFont(Fonts.monoFont());
 		inputField.setPrefColumnCount(INPUT_FIELD_NUM_COLUMNS);
@@ -351,7 +377,7 @@ public class DelayedPage
 		inputField.getStyleClass().add(StyleClass.INPUT_FIELD);
 		HBox.setHgrow(inputField, Priority.ALWAYS);
 
-		// Create button: clear input
+		// Button: clear input
 		Group clearIcon = Icons.clear01(getColour(ColourKey.CLEAR_INPUT_BUTTON_DISC),
 										getColour(ColourKey.CLEAR_INPUT_BUTTON_CROSS));
 		GraphicButton clearInputButton = new GraphicButton(clearIcon, CLEAR_INPUT_STR);
@@ -364,17 +390,53 @@ public class DelayedPage
 			});
 		});
 
-		// Create pane: input
+		// Pane: input
 		HBox inputPane = new HBox(4.0, inputField, clearInputButton);
 		inputPane.setAlignment(Pos.CENTER_LEFT);
 		controlPane.addRow(row++, new Label(INPUT_STR), inputPane);
 		GridPane.setHgrow(inputPane, Priority.ALWAYS);
 
-		// Create spinner: delay
+		// Create factory function for single-character text fields
+		IFunction0<TextField> singleCharFieldFactory = () ->
+		{
+			TextField field = new TextField();
+			field.setPrefColumnCount(2);
+			field.setTextFormatter(new TextFormatter<>(FilterFactory.lengthLimiter(1)));
+			return field;
+		};
+
+		// Create factory function for alias-key text nodes
+		IFunction1<Group, String> aliasKeyTextFactory = name ->
+		{
+			Text2 nameText = Text2.createCentred(name);
+			nameText.setFont(FontUtils.italicFont());
+			nameText.setFill(getColour(ColourKey.ALIAS_KEY_TEXT));
+			nameText.getStyleClass().add(StyleClass.ALIAS_KEY_TEXT);
+
+			Text2 keyText = Text2.createCentred(KEY_STR);
+			keyText.setFill(getColour(ColourKey.ALIAS_KEY_TEXT));
+			keyText.getStyleClass().add(StyleClass.ALIAS_KEY_TEXT);
+
+			return TextUtils.createGroup(nameText, keyText);
+		};
+
+		// Text field: tab
+		TextField tabField = singleCharFieldFactory.invoke();
+
+		// Text field: enter
+		TextField enterField = singleCharFieldFactory.invoke();
+
+		// Pane: aliases
+		HBox aliasesPane = new HBox(CONTROL_H_GAP, Labels.hNoShrink(":"), aliasKeyTextFactory.invoke(TAB_STR), tabField,
+									Labels.hNoShrink("\u2022"), aliasKeyTextFactory.invoke(ENTER_STR), enterField);
+		aliasesPane.setAlignment(Pos.CENTER_LEFT);
+		controlPane.addRow(row++, new Label(ALIASES_STR), aliasesPane);
+
+		// Spinner: delay
 		delaySpinner = IntRangeSpinner.leftRightH(HPos.CENTER, false, MIN_DELAY, MAX_DELAY, state.delay, "000", null);
 
-		// Create pane: delay
-		HBox delayPane = new HBox(5.0, delaySpinner, new Label(SECONDS_STR));
+		// Pane: delay
+		HBox delayPane = new HBox(CONTROL_H_GAP, delaySpinner, Labels.hNoShrink(SECONDS_STR));
 		delayPane.setAlignment(Pos.CENTER_LEFT);
 		controlPane.addRow(row++, new Label(DELAY_STR), delayPane);
 
@@ -419,12 +481,23 @@ public class DelayedPage
 			// If there is text, generate key presses and releases for its characters after a delay
 			if (!text.isEmpty())
 			{
+				// Create function to extract alias character from text field
+				IFunction1<Character, TextField> alias = field ->
+				{
+					String t = field.getText();
+					return t.isEmpty() ? '\0' : t.charAt(0);
+				};
+
+				// Get aliases for tab and enter keys
+				char tabAlias = alias.invoke(tabField);
+				char enterAlias = alias.invoke(enterField);
+
 				// Create list of characters of input text that do not appear in key map
 				List<Character> unmappedChars = new ArrayList<>();
 				for (int i = 0; i < text.length(); i++)
 				{
 					char ch = text.charAt(i);
-					if (!keyMap.containsKey(ch))
+					if ((ch != tabAlias) && (ch != enterAlias) && !keyMap.containsKey(ch))
 						unmappedChars.add(ch);
 				}
 
@@ -455,7 +528,13 @@ public class DelayedPage
 					for (int i = 0; i < text.length(); i++)
 					{
 						char ch = text.charAt(i);
-						KeyMap.Key key = keyMap.get(ch);
+						KeyMap.Key key = null;
+						if (ch == tabAlias)
+							key = KeyMap.TAB_KEY;
+						else if (ch == enterAlias)
+							key = KeyMap.ENTER_KEY;
+						else
+							key = keyMap.get(ch);
 						if (key != null)
 							key.type(robot);
 					}

@@ -48,6 +48,9 @@ public class KeyMap
 //  Constants
 ////////////////////////////////////////////////////////////////////////
 
+	public static final		Key		TAB_KEY		= new Key(KeyEvent.VK_TAB,   EnumSet.noneOf(ModifierKey.class));
+	public static final		Key		ENTER_KEY	= new Key(KeyEvent.VK_ENTER, EnumSet.noneOf(ModifierKey.class));
+
 	private static final	int		MIN_NUM_FIELDS	= 2;
 	private static final	int		MAX_NUM_FIELDS	= 3;
 

@@ -84,13 +84,14 @@ import uk.blankaspect.ui.jfx.container.PaneStyle;
 
 import uk.blankaspect.ui.jfx.dialog.ErrorDialog;
 
+import uk.blankaspect.ui.jfx.dropdownlist.SimpleDropDownList;
+
 import uk.blankaspect.ui.jfx.font.FontUtils;
 
 import uk.blankaspect.ui.jfx.icon.Icons;
 
 import uk.blankaspect.ui.jfx.scene.SceneUtils;
 
-import uk.blankaspect.ui.jfx.spinner.CollectionSpinner;
 import uk.blankaspect.ui.jfx.spinner.SpinnerFactory;
 
 import uk.blankaspect.ui.jfx.style.ColourProperty;
@@ -124,14 +125,14 @@ public class PeriodicPage
 	/** The maximum number of digits of the interval-value spinner. */
 	private static final	int		INTERVAL_VALUE_SPINNER_NUM_DIGITS	= 3;
 
-	/** The horizontal gap between adjacent components of the control pane. */
-	private static final	double	CONTROL_PANE_H_GAP	= 6.0;
+	/** The horizontal gap between adjacent components in a container. */
+	private static final	double	CONTROL_H_GAP	= 6.0;
 
-	/** The vertical gap between adjacent components of the control pane. */
-	private static final	double	CONTROL_PANE_V_GAP	= 8.0;
+	/** The vertical gap between adjacent components in a container. */
+	private static final	double	CONTROL_V_GAP	= 8.0;
 
 	/** The padding around the control pane. */
-	private static final	Insets	CONTROL_PANE_PADDING	= new Insets(6.0, 4.0, 6.0, 10.0);
+	private static final	Insets	CONTROL_PANE_PADDING	= new Insets(6.0, 6.0, 6.0, 12.0);
 
 	/** The factor by which the size of the default font is multiplied to give the size of the font of the status
 		label. */
@@ -303,46 +304,46 @@ public class PeriodicPage
 ////////////////////////////////////////////////////////////////////////
 
 	/** The saved state of this page. */
-	private	State						state;
+	private	State							state;
 
 	/** Information about the current key. */
-	private	KeyInfo						keyInfo;
+	private	KeyInfo							keyInfo;
 
 	/** The time of the last generated key press. */
-	private	LocalTime					keyPressTime;
+	private	LocalTime						keyPressTime;
 
 	/** The <i>edit key</i> button. */
-	private	ImageDataButton				editKeyButton;
+	private	ImageDataButton					editKeyButton;
 
 	/** The text field in which a key is selected. */
-	private	TextField					keyField;
+	private	TextField						keyField;
 
 	/** The spinner for the numerical part of the interval between generated key presses. */
-	private	Spinner<Integer>			intervalValueSpinner;
+	private	Spinner<Integer>				intervalValueSpinner;
 
-	/** The spinner for the unit (seconds or minutes) of the interval between generated key presses. */
-	private	CollectionSpinner<TimeUnit>	intervalUnitSpinner;
+	/** The drop-down list for the unit (seconds or minutes) of the interval between generated key presses. */
+	private	SimpleDropDownList<TimeUnit>	intervalUnitList;
 
 	/** The label for the time of the last generated key press, {@link #keyPressTime}. */
-	private	Label						statusLabel;
+	private	Label							statusLabel;
 
 	/** The pane that contains {@link #statusLabel}. */
-	private	StackPane					statusPane;
+	private	StackPane						statusPane;
 
 	/** The <i>start</i> button. */
-	private	Button						startButton;
+	private	Button							startButton;
 
 	/** The <i>stop</i> button. */
-	private	Button						stopButton;
+	private	Button							stopButton;
 
 	/** The outer pane of this page. */
-	private	HBox						pane;
+	private	VBox							pane;
 
 	/** The scene that contains this page. */
-	private	Scene						scene;
+	private	Scene							scene;
 
 	/** The interval timer. */
-	private	Timeline					timer;
+	private	Timeline						timer;
 
 ////////////////////////////////////////////////////////////////////////
 //  Static initialiser
@@ -419,7 +420,7 @@ public class PeriodicPage
 ////////////////////////////////////////////////////////////////////////
 
 	@Override
-	public HBox pane()
+	public VBox pane()
 	{
 		return pane;
 	}
@@ -432,7 +433,7 @@ public class PeriodicPage
 		// Update state
 		state.keyInfo = keyInfo;
 		state.intervalValue = intervalValueSpinner.getValue();
-		state.intervalUnit = intervalUnitSpinner.getItem();
+		state.intervalUnit = intervalUnitList.item();
 
 		// Encode state and return result
 		return state.encodeTree();
@@ -526,8 +527,8 @@ public class PeriodicPage
 	{
 		// Create control pane
 		GridPane controlPane = new GridPane();
-		controlPane.setHgap(CONTROL_PANE_H_GAP);
-		controlPane.setVgap(CONTROL_PANE_V_GAP);
+		controlPane.setHgap(CONTROL_H_GAP);
+		controlPane.setVgap(CONTROL_V_GAP);
 		controlPane.setAlignment(Pos.CENTER);
 		controlPane.setPadding(CONTROL_PANE_PADDING);
 		controlPane.setBorder(SceneUtils.createSolidBorder(getColour(PaneStyle.ColourKey.PANE_BORDER)));
@@ -538,10 +539,6 @@ public class PeriodicPage
 		ColumnConstraints column = new ColumnConstraints();
 		column.setMinWidth(Region.USE_PREF_SIZE);
 		column.setHalignment(HPos.RIGHT);
-		controlPane.getColumnConstraints().add(column);
-
-		column = new ColumnConstraints();
-		column.setHalignment(HPos.LEFT);
 		controlPane.getColumnConstraints().add(column);
 
 		column = new ColumnConstraints();
@@ -603,12 +600,12 @@ public class PeriodicPage
 		intervalValueSpinner = SpinnerFactory.integerSpinner(MIN_INTERVAL_VALUE, MAX_INTERVAL_VALUE,
 															 state.intervalValue, INTERVAL_VALUE_SPINNER_NUM_DIGITS);
 
-		// Spinner: interval unit
-		intervalUnitSpinner =
-				CollectionSpinner.leftRightH(HPos.CENTER, true, TimeUnit.class, state.intervalUnit, null, null);
+		// Drop-down list: interval unit
+		intervalUnitList = new SimpleDropDownList<>(TimeUnit.values());
+		intervalUnitList.item(state.intervalUnit);
 
 		// Pane: interval
-		HBox intervalPane = new HBox(CONTROL_PANE_H_GAP, intervalValueSpinner, intervalUnitSpinner);
+		HBox intervalPane = new HBox(CONTROL_H_GAP, intervalValueSpinner, intervalUnitList);
 		intervalPane.setAlignment(Pos.CENTER_LEFT);
 		controlPane.addRow(row++, new Label(INTERVAL_STR), intervalPane);
 
@@ -649,7 +646,7 @@ public class PeriodicPage
 
 				// Create timer to generate key presses periodically
 				int interval = intervalValueSpinner.getValue();
-				if (intervalUnitSpinner.getItem() == TimeUnit.MINUTES)
+				if (intervalUnitList.item() == TimeUnit.MINUTES)
 					interval *= 60;
 				timer = new Timeline(new KeyFrame(Duration.seconds((double)interval), event0 ->
 				{
@@ -729,13 +726,14 @@ public class PeriodicPage
 		buttonPane.setAlignment(Pos.CENTER_RIGHT);
 		buttonPane.setPadding(BUTTON_PANE_PADDING);
 
-		// Create left pane
-		VBox leftPane = new VBox(4.0, controlPane, buttonPane);
-		leftPane.setAlignment(Pos.TOP_CENTER);
+		// Create top pane
+		HBox topPane = new HBox(4.0, controlPane, statusPane);
+		VBox.setVgrow(topPane, Priority.ALWAYS);
+//		topPane.setAlignment(Pos.TOP_CENTER);
 
 		// Create outer pane
-		pane = new HBox(4.0, leftPane, statusPane);
-		pane.setAlignment(Pos.CENTER);
+		pane = new VBox(4.0, topPane, buttonPane);
+		pane.setAlignment(Pos.TOP_CENTER);
 		pane.getStyleClass().add(StyleClass.PERIODIC_PAGE);
 
 		// Update UI components when content of key field changes

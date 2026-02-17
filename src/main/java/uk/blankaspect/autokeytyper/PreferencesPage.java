@@ -47,8 +47,8 @@ public class PreferencesPage
 //  Constants
 ////////////////////////////////////////////////////////////////////////
 
-	/** The horizontal gap between adjacent components of the control pane. */
-	private static final	double	CONTROL_PANE_H_GAP	= 6.0;
+	/** The horizontal gap between adjacent components in a container. */
+	private static final	double	CONTROL_H_GAP	= 6.0;
 
 	/** The padding around the control pane. */
 	private static final	Insets	CONTROL_PANE_PADDING	= new Insets(12.0, 20.0, 12.0, 20.0);
@@ -129,7 +129,7 @@ public class PreferencesPage
 		});
 
 		// Create control pane
-		HBox controlPane = new HBox(CONTROL_PANE_H_GAP, Labels.hNoShrink(THEME_STR), themeSpinner);
+		HBox controlPane = new HBox(CONTROL_H_GAP, Labels.hNoShrink(THEME_STR), themeSpinner);
 		controlPane.setAlignment(Pos.CENTER);
 		controlPane.setPadding(CONTROL_PANE_PADDING);
 
