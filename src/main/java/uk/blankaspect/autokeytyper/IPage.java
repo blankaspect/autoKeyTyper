@@ -18,6 +18,10 @@ package uk.blankaspect.autokeytyper;
 // IMPORTS
 
 
+import java.util.List;
+
+import javafx.scene.control.Button;
+
 import javafx.scene.layout.Pane;
 
 import uk.blankaspect.common.basictree.MapNode;
@@ -47,6 +51,16 @@ public interface IPage
 	 */
 
 	Pane pane();
+
+	//------------------------------------------------------------------
+
+	/**
+	 * Returns a list of the command buttons of this page.
+	 *
+	 * @return a list of the command buttons of this page.
+	 */
+
+	List<Button> buttons();
 
 	//------------------------------------------------------------------
 

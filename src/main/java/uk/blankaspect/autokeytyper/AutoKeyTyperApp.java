@@ -37,7 +37,6 @@ import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.geometry.Point2D;
 import javafx.geometry.Pos;
-import javafx.geometry.Side;
 
 import javafx.scene.Node;
 import javafx.scene.Scene;
@@ -47,9 +46,8 @@ import javafx.scene.control.Button;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
+import javafx.scene.layout.TilePane;
 import javafx.scene.layout.VBox;
-
-import javafx.scene.paint.Color;
 
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
@@ -62,9 +60,6 @@ import uk.blankaspect.common.cls.ClassUtils;
 
 import uk.blankaspect.common.config.AppAuxDirectory;
 import uk.blankaspect.common.config.AppConfig;
-
-import uk.blankaspect.common.css.CssRuleSet;
-import uk.blankaspect.common.css.CssSelector;
 
 import uk.blankaspect.common.exception2.BaseException;
 import uk.blankaspect.common.exception2.FileException;
@@ -84,8 +79,6 @@ import uk.blankaspect.common.string.StringUtils;
 import uk.blankaspect.ui.jfx.button.Buttons;
 import uk.blankaspect.ui.jfx.button.ImageDataButton;
 
-import uk.blankaspect.ui.jfx.container.PaneStyle;
-
 import uk.blankaspect.ui.jfx.dialog.ErrorDialog;
 
 import uk.blankaspect.ui.jfx.exec.ExecUtils;
@@ -100,9 +93,6 @@ import uk.blankaspect.ui.jfx.scene.SceneUtils;
 
 import uk.blankaspect.ui.jfx.spinner.CollectionSpinner;
 
-import uk.blankaspect.ui.jfx.style.ColourProperty;
-import uk.blankaspect.ui.jfx.style.FxProperty;
-import uk.blankaspect.ui.jfx.style.RuleSetBuilder;
 import uk.blankaspect.ui.jfx.style.StyleConstants;
 import uk.blankaspect.ui.jfx.style.StyleManager;
 
@@ -171,16 +161,22 @@ public class AutoKeyTyperApp
 	private static final	Insets	SCREEN_MARGINS	= new Insets(0.0, 32.0, 32.0, 0.0);
 
 	/** The padding around the page pane. */
-	private static final	Insets	PAGE_PANE_PADDING	= new Insets(4.0, 6.0, 4.0, 6.0);
+	private static final	Insets	PAGE_PANE_PADDING	= new Insets(4.0, 6.0, 0.0, 6.0);
 
-	/** The horizontal gap between adjacent components of the control pane. */
-	private static final	double	CONTROL_PANE_H_GAP	= 6.0;
+	/** The horizontal gap between adjacent buttons of the page-button pane. */
+	private static final	double	PAGE_BUTTON_PANE_H_GAP	= 12.0;
+
+	/** The vertical gap between adjacent buttons of the page-button pane. */
+	private static final	double	PAGE_BUTTON_PANE_V_GAP	= 6.0;
+
+	/** The width of the fillers in the control pane. */
+	private static final	double	CONTROL_PANE_FILLER_WIDTH	= 16.0;
 
 	/** The padding around the control pane. */
 	private static final	Insets	CONTROL_PANE_PADDING	= new Insets(6.0, 12.0, 6.0, 12.0);
 
 	/** The padding around a button. */
-	private static final	Insets	BUTTON_PADDING	= new Insets(4.0, 16.0, 4.0, 16.0);
+	private static final	Insets	BUTTON_PADDING	= new Insets(4.0, 12.0, 4.0, 12.0);
 
 	/** The name of the default key-map file. */
 	private static final	String	KEY_MAP_FILENAME	= "keyMap.txt";
@@ -189,38 +185,6 @@ public class AutoKeyTyperApp
 	private static final	String	CONFIG_ERROR_STR	= "Configuration error";
 	private static final	String	PAGE_STR			= "Page";
 	private static final	String	EXIT_STR			= "Exit";
-
-	/** CSS colour properties. */
-	private static final	List<ColourProperty>	COLOUR_PROPERTIES	= List.of
-	(
-		ColourProperty.of
-		(
-			FxProperty.BORDER_COLOUR,
-			PaneStyle.ColourKey.PANE_BORDER,
-			CssSelector.builder()
-					.id(StyleConstants.NodeId.APP_MAIN_ROOT)
-					.desc(StyleClass.MAIN_CONTROL_PANE)
-					.build()
-		)
-	);
-
-	/** CSS rule sets. */
-	private static final	List<CssRuleSet>	RULE_SETS	= List.of
-	(
-		RuleSetBuilder.create()
-				.selector(CssSelector.builder()
-						.id(StyleConstants.NodeId.APP_MAIN_ROOT)
-						.desc(StyleClass.MAIN_CONTROL_PANE)
-						.build())
-				.borders(Side.TOP)
-				.build()
-	);
-
-	/** CSS style classes. */
-	private interface StyleClass
-	{
-		String	MAIN_CONTROL_PANE	= StyleConstants.CLASS_PREFIX + "main-control-pane";
-	}
 
 	/** Keys of properties. */
 	private interface PropertyKey
@@ -280,8 +244,11 @@ public class AutoKeyTyperApp
 	/** The current page. */
 	private	Page						page;
 
-	/** The pane that contains the page spinner and the <i>exit</i> button. */
-	private	HBox						controlPane;
+	/** The pane that contains the spinner for selecting the current page. */
+	private	HBox						pageSpinnerPane;
+
+	/** The <i>exit</i> button. */
+	private	Button						exitButton;
 
 ////////////////////////////////////////////////////////////////////////
 //  Constructors
@@ -342,24 +309,6 @@ public class AutoKeyTyperApp
 			}
 		}
 		return delay;
-	}
-
-	//------------------------------------------------------------------
-
-	/**
-	 * Returns the colour that is associated with the specified key in the colour map of the current theme of the
-	 * {@linkplain StyleManager style manager}.
-	 *
-	 * @param  key
-	 *           the key of the desired colour.
-	 * @return the colour that is associated with {@code key} in the colour map of the current theme of the style
-	 *         manager, or {@link StyleManager#DEFAULT_COLOUR} if there is no such colour.
-	 */
-
-	private static Color getColour(
-		String	key)
-	{
-		return StyleManager.INSTANCE.getColourOrDefault(key);
 	}
 
 	//------------------------------------------------------------------
@@ -458,9 +407,6 @@ public class AutoKeyTyperApp
 			styleManager.setStyleSheetFilename(STYLE_SHEET_FILENAME);
 		}
 
-		// Register the style properties of this class with the style manager
-		styleManager.register(getClass(), COLOUR_PROPERTIES, RULE_SETS);
-
 		// Create robot to generate key events
 		try
 		{
@@ -505,25 +451,43 @@ public class AutoKeyTyperApp
 		// Initialise 'Images' class
 		Images.init();
 
-		// Create procedure to enable/disable control pane
-		IProcedure1<Boolean> enableControlPane = enabled -> controlPane.setDisable(!enabled);
+		// Create procedure to enable/disable components of control pane
+		IProcedure1<Boolean> enableControls = enabled ->
+		{
+			pageSpinnerPane.setDisable(!enabled);
+			exitButton.setDisable(!enabled);
+		};
 
 		// Initialise pages
-		((DelayedPage)pages.get(Page.DELAYED)).init(robot, keyMap, enableControlPane);
-		((PeriodicPage)pages.get(Page.PERIODIC)).init(robot, enableControlPane);
+		((DelayedPage)pages.get(Page.DELAYED)).init(robot, keyMap, enableControls);
+		((PeriodicPage)pages.get(Page.PERIODIC)).init(robot, enableControls);
 		((PreferencesPage)pages.get(Page.PREFERENCES)).init();
 
 		// Create page pane
 		StackPane pagePane = new StackPane();
 		pagePane.setPadding(PAGE_PANE_PADDING);
 
-		// Add pages to page pane
+		// Create page-button pane
+		StackPane pageButtonPane = new StackPane();
+
+		// Add pages to page pane; add page buttons to page-button pane
 		for (Page page : pages.keySet())
 		{
+			// Add page to page pane
 			Pane pane = pages.get(page).pane();
 			pane.setUserData(page.key);
 			pane.setVisible(false);
 			pagePane.getChildren().add(pane);
+
+			// Add buttons to page-button pane
+			List<Button> buttons = pages.get(page).buttons();
+			TilePane buttonPane = new TilePane(PAGE_BUTTON_PANE_H_GAP, PAGE_BUTTON_PANE_V_GAP);
+			buttonPane.setUserData(page.key);
+			buttonPane.setPrefColumns(buttons.size());
+			buttonPane.setAlignment(Pos.CENTER);
+			buttonPane.setVisible(false);
+			buttonPane.getChildren().addAll(buttons);
+			pageButtonPane.getChildren().add(buttonPane);
 		}
 
 		// Create procedure to update page
@@ -538,6 +502,10 @@ public class AutoKeyTyperApp
 			// Show current page; hide other pages
 			for (Node child : pagePane.getChildren())
 				child.setVisible(page.key.equals(child.getUserData()));
+
+			// Show buttons of current page; hide buttons of other pages
+			for (Node child : pageButtonPane.getChildren())
+				child.setVisible(page.key.equals(child.getUserData()));
 		};
 
 		// Spinner: page
@@ -545,22 +513,24 @@ public class AutoKeyTyperApp
 				CollectionSpinner.leftRightH(HPos.CENTER, true, Page.class, page, null, null);
 		pageSpinner.itemProperty().addListener((observable, oldPage, page) -> updatePage.invoke(page));
 
+		// Create pane for page spinner
+		pageSpinnerPane = new HBox(6.0, Labels.hNoShrink(PAGE_STR), pageSpinner);
+		pageSpinnerPane.setAlignment(Pos.CENTER_LEFT);
+
 		// Button: exit
-		Button exitButton = Buttons.hNoShrink(EXIT_STR);
+		exitButton = Buttons.hNoShrink(EXIT_STR);
 		exitButton.setPadding(BUTTON_PADDING);
 		exitButton.setOnAction(event ->
 				primaryStage.fireEvent(new WindowEvent(primaryStage, WindowEvent.WINDOW_CLOSE_REQUEST)));
 
 		// Create control pane
-		controlPane = new HBox(CONTROL_PANE_H_GAP, Labels.hNoShrink(PAGE_STR), pageSpinner,
-							   FillerUtils.hBoxFiller(10.0), exitButton);
+		HBox controlPane = new HBox(pageSpinnerPane, FillerUtils.hBoxFiller(CONTROL_PANE_FILLER_WIDTH), pageButtonPane,
+									FillerUtils.hBoxFiller(CONTROL_PANE_FILLER_WIDTH), exitButton);
 		controlPane.setAlignment(Pos.CENTER);
 		controlPane.setPadding(CONTROL_PANE_PADDING);
-		controlPane.setBorder(SceneUtils.createSolidBorder(getColour(PaneStyle.ColourKey.PANE_BORDER), Side.TOP));
-		controlPane.getStyleClass().add(StyleClass.MAIN_CONTROL_PANE);
 
 		// Create main pane
-		VBox mainPane = new VBox(4.0, pagePane, controlPane);
+		VBox mainPane = new VBox(pagePane, controlPane);
 		mainPane.setId(StyleConstants.NodeId.APP_MAIN_ROOT);
 		mainPane.setAlignment(Pos.CENTER);
 

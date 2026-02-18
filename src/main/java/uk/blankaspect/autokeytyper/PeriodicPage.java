@@ -59,8 +59,6 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
-import javafx.scene.layout.TilePane;
-import javafx.scene.layout.VBox;
 
 import javafx.scene.paint.Color;
 
@@ -90,6 +88,8 @@ import uk.blankaspect.ui.jfx.font.FontUtils;
 
 import uk.blankaspect.ui.jfx.icon.Icons;
 
+import uk.blankaspect.ui.jfx.popup.ActionLabelPopUp;
+
 import uk.blankaspect.ui.jfx.scene.SceneUtils;
 
 import uk.blankaspect.ui.jfx.spinner.SpinnerFactory;
@@ -99,6 +99,8 @@ import uk.blankaspect.ui.jfx.style.FxProperty;
 import uk.blankaspect.ui.jfx.style.RuleSetBuilder;
 import uk.blankaspect.ui.jfx.style.StyleConstants;
 import uk.blankaspect.ui.jfx.style.StyleManager;
+
+import uk.blankaspect.ui.jfx.text.TextUtils;
 
 //----------------------------------------------------------------------
 
@@ -114,9 +116,16 @@ public class PeriodicPage
 //  Constants
 ////////////////////////////////////////////////////////////////////////
 
-	private static final	int		MIN_INTERVAL_VALUE		= 1;
-	private static final	int		MAX_INTERVAL_VALUE		= 999;
+	/** The minimum interval value. */
+	private static final	int		MIN_INTERVAL_VALUE	= 1;
+
+	/** The maximum interval value. */
+	private static final	int		MAX_INTERVAL_VALUE	= 999;
+
+	/** The default interval value. */
 	private static final	int		DEFAULT_INTERVAL_VALUE	= 30;
+
+	/** The default interval unit. */
 	private static final	TimeUnit	DEFAULT_INTERVAL_UNIT	= TimeUnit.SECONDS;
 
 	/** The preferred number of columns of the key field. */
@@ -134,27 +143,18 @@ public class PeriodicPage
 	/** The padding around the control pane. */
 	private static final	Insets	CONTROL_PANE_PADDING	= new Insets(6.0, 6.0, 6.0, 12.0);
 
-	/** The factor by which the size of the default font is multiplied to give the size of the font of the status
+	/** The factor by which the size of the default font is multiplied to give the size of the font of the time
 		label. */
-	private static final	double	STATUS_LABEL_FONT_SIZE_FACTOR	= 1.333;
+	private static final	double	TIME_LABEL_FONT_SIZE_FACTOR	= 1.333;
 
 	/** The suffix of a string representation of a font size in a style property. */
 	private static final	String	FONT_SIZE_SUFFIX	= "px";
 
-	/** The padding around the status pane. */
-	private static final	Insets	STATUS_PANE_PADDING	= new Insets(8.0, 12.0, 8.0, 12.0);
+	/** The padding around the time pane. */
+	private static final	Insets	TIME_PANE_PADDING	= new Insets(8.0, 12.0, 8.0, 12.0);
 
-	/** The padding around a button. */
+	/** The padding around a command button. */
 	private static final	Insets	BUTTON_PADDING	= new Insets(4.0, 16.0, 4.0, 16.0);
-
-	/** The horizontal gap between adjacent buttons of the button pane. */
-	private static final	double	BUTTON_PANE_H_GAP	= 12.0;
-
-	/** The vertical gap between adjacent buttons of the button pane. */
-	private static final	double	BUTTON_PANE_V_GAP	= 6.0;
-
-	/** The padding around the button pane. */
-	private static final	Insets	BUTTON_PANE_PADDING	= new Insets(4.0, 6.0, 0.0, 6.0);
 
 	/** The formatter for the time of the last generated key press. */
 	private static final	DateTimeFormatter	TIME_FORMATTER	= DateTimeFormatter.ofPattern("HH:mm:ss");
@@ -170,6 +170,9 @@ public class PeriodicPage
 	private static final	String	START_STR		= "Start";
 	private static final	String	STOP_STR		= "Stop";
 	private static final	String	ERROR_STR		= "Error";
+	private static final	String	MOVE_PANE_STR	= "Move pane to the ";
+	private static final	String	LEFT_STR		= "left";
+	private static final	String	RIGHT_STR		= "right";
 
 	/** The pseudo-class that is associated with the <i>highlighted</i> state. */
 	private static final	PseudoClass	HIGHLIGHTED_PSEUDO_CLASS	=
@@ -208,37 +211,37 @@ public class PeriodicPage
 		ColourProperty.of
 		(
 			FxProperty.TEXT_FILL,
-			ColourKey.STATUS_LABEL_TEXT,
+			ColourKey.TIME_LABEL_TEXT,
 			CssSelector.builder()
 					.cls(StyleClass.PERIODIC_PAGE)
-					.desc(StyleClass.STATUS_LABEL)
+					.desc(StyleClass.TIME_LABEL)
 					.build()
 		),
 		ColourProperty.of
 		(
 			FxProperty.TEXT_FILL,
-			ColourKey.STATUS_LABEL_TEXT_HIGHLIGHTED,
+			ColourKey.TIME_LABEL_TEXT_HIGHLIGHTED,
 			CssSelector.builder()
 					.cls(StyleClass.PERIODIC_PAGE)
-					.desc(StyleClass.STATUS_LABEL).pseudo(PseudoClassKey.HIGHLIGHTED)
+					.desc(StyleClass.TIME_LABEL).pseudo(PseudoClassKey.HIGHLIGHTED)
 					.build()
 		),
 		ColourProperty.of
 		(
 			FxProperty.BACKGROUND_COLOUR,
-			ColourKey.STATUS_PANE_BACKGROUND,
+			ColourKey.TIME_PANE_BACKGROUND,
 			CssSelector.builder()
 					.cls(StyleClass.PERIODIC_PAGE)
-					.desc(StyleClass.STATUS_PANE)
+					.desc(StyleClass.TIME_PANE)
 					.build()
 		),
 		ColourProperty.of
 		(
 			FxProperty.BACKGROUND_COLOUR,
-			ColourKey.STATUS_PANE_BACKGROUND_HIGHLIGHTED,
+			ColourKey.TIME_PANE_BACKGROUND_HIGHLIGHTED,
 			CssSelector.builder()
 					.cls(StyleClass.PERIODIC_PAGE)
-					.desc(StyleClass.STATUS_PANE).pseudo(PseudoClassKey.HIGHLIGHTED)
+					.desc(StyleClass.TIME_PANE).pseudo(PseudoClassKey.HIGHLIGHTED)
 					.build()
 		),
 		ColourProperty.of
@@ -247,7 +250,7 @@ public class PeriodicPage
 			PaneStyle.ColourKey.PANE_BORDER,
 			CssSelector.builder()
 					.cls(StyleClass.PERIODIC_PAGE)
-					.desc(StyleClass.STATUS_PANE)
+					.desc(StyleClass.TIME_PANE)
 					.build()
 		)
 	);
@@ -258,9 +261,9 @@ public class PeriodicPage
 		RuleSetBuilder.create()
 				.selector(CssSelector.builder()
 						.cls(StyleClass.PERIODIC_PAGE)
-						.desc(StyleClass.STATUS_LABEL)
+						.desc(StyleClass.TIME_LABEL)
 						.build())
-				.fontSize(Math.round(FontUtils.getSize(STATUS_LABEL_FONT_SIZE_FACTOR)) + FONT_SIZE_SUFFIX)
+				.fontSize(Math.round(FontUtils.getSize(TIME_LABEL_FONT_SIZE_FACTOR)) + FONT_SIZE_SUFFIX)
 				.boldFont()
 				.build()
 	);
@@ -270,8 +273,8 @@ public class PeriodicPage
 	{
 		String	CONTROL_PANE	= StyleConstants.CLASS_PREFIX + "control-pane";
 		String	PERIODIC_PAGE	= StyleConstants.CLASS_PREFIX + "periodic-page";
-		String	STATUS_LABEL	= StyleConstants.CLASS_PREFIX + "status-label";
-		String	STATUS_PANE		= StyleConstants.CLASS_PREFIX + "status-pane";
+		String	TIME_LABEL		= StyleConstants.CLASS_PREFIX + "time-label";
+		String	TIME_PANE		= StyleConstants.CLASS_PREFIX + "time-pane";
 	}
 
 	/** Keys of CSS pseudo-classes. */
@@ -287,10 +290,10 @@ public class PeriodicPage
 
 		String	CLEAR_KEY_BUTTON_CROSS				= PREFIX + "clearKeyButton.cross";
 		String	CLEAR_KEY_BUTTON_DISC				= PREFIX + "clearKeyButton.disc";
-		String	STATUS_LABEL_TEXT					= PREFIX + "statusLabel.text";
-		String	STATUS_LABEL_TEXT_HIGHLIGHTED		= PREFIX + "statusLabel.text.highlighted";
-		String	STATUS_PANE_BACKGROUND				= PREFIX + "statusPane.background";
-		String	STATUS_PANE_BACKGROUND_HIGHLIGHTED	= PREFIX + "statusPane.background.highlighted";
+		String	TIME_LABEL_TEXT						= PREFIX + "timeLabel.text";
+		String	TIME_LABEL_TEXT_HIGHLIGHTED			= PREFIX + "timeLabel.text.highlighted";
+		String	TIME_PANE_BACKGROUND				= PREFIX + "timePane.background";
+		String	TIME_PANE_BACKGROUND_HIGHLIGHTED	= PREFIX + "timePane.background.highlighted";
 	}
 
 	/** Error messages. */
@@ -312,6 +315,9 @@ public class PeriodicPage
 	/** The time of the last generated key press. */
 	private	LocalTime						keyPressTime;
 
+	/** The interval timer. */
+	private	Timeline						timer;
+
 	/** The <i>edit key</i> button. */
 	private	ImageDataButton					editKeyButton;
 
@@ -325,10 +331,10 @@ public class PeriodicPage
 	private	SimpleDropDownList<TimeUnit>	intervalUnitList;
 
 	/** The label for the time of the last generated key press, {@link #keyPressTime}. */
-	private	Label							statusLabel;
+	private	Label							timeLabel;
 
-	/** The pane that contains {@link #statusLabel}. */
-	private	StackPane						statusPane;
+	/** The pane that contains {@link #timeLabel}. */
+	private	StackPane						timePane;
 
 	/** The <i>start</i> button. */
 	private	Button							startButton;
@@ -337,13 +343,10 @@ public class PeriodicPage
 	private	Button							stopButton;
 
 	/** The outer pane of this page. */
-	private	VBox							pane;
+	private	HBox							pane;
 
 	/** The scene that contains this page. */
 	private	Scene							scene;
-
-	/** The interval timer. */
-	private	Timeline						timer;
 
 ////////////////////////////////////////////////////////////////////////
 //  Static initialiser
@@ -420,9 +423,17 @@ public class PeriodicPage
 ////////////////////////////////////////////////////////////////////////
 
 	@Override
-	public VBox pane()
+	public HBox pane()
 	{
 		return pane;
+	}
+
+	//------------------------------------------------------------------
+
+	@Override
+	public List<Button> buttons()
+	{
+		return List.of(startButton, stopButton);
 	}
 
 	//------------------------------------------------------------------
@@ -436,7 +447,7 @@ public class PeriodicPage
 		state.intervalUnit = intervalUnitList.item();
 
 		// Encode state and return result
-		return state.encodeTree();
+		return state.encode();
 	}
 
 	//------------------------------------------------------------------
@@ -445,7 +456,7 @@ public class PeriodicPage
 	public void decodeState(
 		MapNode	rootNode)
 	{
-		state.decodeTree(rootNode);
+		state.decode(rootNode);
 	}
 
 	//------------------------------------------------------------------
@@ -499,8 +510,8 @@ public class PeriodicPage
 							timer.pause();
 					}
 
-					// Update status
-					updateStatus();
+					// Update time
+					updateTime();
 				};
 
 				// Start/pause timer when window gains/loses focus
@@ -533,7 +544,7 @@ public class PeriodicPage
 		controlPane.setPadding(CONTROL_PANE_PADDING);
 		controlPane.setBorder(SceneUtils.createSolidBorder(getColour(PaneStyle.ColourKey.PANE_BORDER)));
 		controlPane.getStyleClass().add(StyleClass.CONTROL_PANE);
-		VBox.setVgrow(controlPane, Priority.ALWAYS);
+		HBox.setHgrow(controlPane, Priority.ALWAYS);
 
 		// Initialise column constraints
 		ColumnConstraints column = new ColumnConstraints();
@@ -609,24 +620,70 @@ public class PeriodicPage
 		intervalPane.setAlignment(Pos.CENTER_LEFT);
 		controlPane.addRow(row++, new Label(INTERVAL_STR), intervalPane);
 
-		// Create status label
-		statusLabel = new Label();
-		statusLabel.setFont(FontUtils.boldFont(STATUS_LABEL_FONT_SIZE_FACTOR));
-		statusLabel.setTextFill(getColour(ColourKey.STATUS_LABEL_TEXT));
-		statusLabel.getStyleClass().add(StyleClass.STATUS_LABEL);
+		// Label: time
+		timeLabel = new Label();
+		timeLabel.setFont(FontUtils.boldFont(TIME_LABEL_FONT_SIZE_FACTOR));
+		timeLabel.setMinWidth(Region.USE_PREF_SIZE);
+		timeLabel.setPrefWidth(TextUtils.textWidthCeil(timeLabel.getFont(),
+													   TIME_FORMATTER.format(LocalTime.of(0, 0, 0))));
+		timeLabel.setTextFill(getColour(ColourKey.TIME_LABEL_TEXT));
+		timeLabel.getStyleClass().add(StyleClass.TIME_LABEL);
 
-		// Create status pane
-		statusPane = new StackPane(statusLabel);
-		statusPane.setPadding(STATUS_PANE_PADDING);
-		statusPane.setBackground(SceneUtils.createColouredBackground(getColour(ColourKey.STATUS_PANE_BACKGROUND)));
-		statusPane.setBorder(SceneUtils.createSolidBorder(getColour(PaneStyle.ColourKey.PANE_BORDER)));
-		statusPane.getStyleClass().add(StyleClass.STATUS_PANE);
-		HBox.setHgrow(statusPane, Priority.ALWAYS);
+		// Create procedure to update children of outer pane
+		IProcedure0 updateOuterPane = () ->
+		{
+			pane.getChildren().setAll(switch (state.timePanePos)
+			{
+				case LEFT  -> List.of(timePane, controlPane);
+				case RIGHT -> List.of(controlPane, timePane);
+			});
+		};
+
+		// Pane: time
+		timePane = new StackPane(timeLabel);
+		timePane.setPadding(TIME_PANE_PADDING);
+		timePane.setBackground(SceneUtils.createColouredBackground(getColour(ColourKey.TIME_PANE_BACKGROUND)));
+		timePane.setBorder(SceneUtils.createSolidBorder(getColour(PaneStyle.ColourKey.PANE_BORDER)));
+		timePane.getStyleClass().add(StyleClass.TIME_PANE);
+		timePane.setOnContextMenuRequested(event ->
+		{
+			if (timer == null)
+			{
+				// Create pop-up for 'move pane' action
+				String text = MOVE_PANE_STR + ((state.timePanePos == TimePanePos.LEFT) ? RIGHT_STR : LEFT_STR);
+				String imageId = (state.timePanePos == TimePanePos.LEFT)
+						? Images.ImageId.ARROW_RIGHT
+						: Images.ImageId.ARROW_LEFT;
+				ActionLabelPopUp.GraphicPos graphicPos = (state.timePanePos == TimePanePos.LEFT)
+						? ActionLabelPopUp.GraphicPos.RIGHT
+						: ActionLabelPopUp.GraphicPos.LEFT;
+				ActionLabelPopUp popUp = new ActionLabelPopUp(text, Images.icon(imageId), graphicPos, () ->
+				{
+					state.timePanePos = switch (state.timePanePos)
+					{
+						case LEFT  -> TimePanePos.RIGHT;
+						case RIGHT -> TimePanePos.LEFT;
+					};
+					updateOuterPane.invoke();
+				});
+
+				// Display context menu
+				popUp.show(SceneUtils.getWindow(timePane), event.getScreenX(), event.getScreenY());
+			}
+		});
+
+		// Create outer pane
+		pane = new HBox(4.0);
+		pane.setAlignment(Pos.CENTER);
+		pane.getStyleClass().add(StyleClass.PERIODIC_PAGE);
+
+		// Add children to outer pane
+		updateOuterPane.invoke();
 
 		// Create procedure to update UI components
 		IProcedure0 updateComponents = () ->
 		{
-			updateStatus();
+			updateTime();
 
 			boolean timerActive = (timer != null);
 			controlPane.setDisable(timerActive);
@@ -634,7 +691,7 @@ public class PeriodicPage
 			stopButton.setDisable(!timerActive);
 		};
 
-		// Create button: start
+		// Button: start
 		startButton = Buttons.hExpansive(START_STR);
 		startButton.setPadding(BUTTON_PADDING);
 		startButton.setOnAction(event ->
@@ -679,8 +736,8 @@ public class PeriodicPage
 					// Update time of last key press
 					keyPressTime = LocalTime.now();
 
-					// Update status
-					updateStatus();
+					// Update time
+					updateTime();
 				}));
 				timer.setCycleCount(Animation.INDEFINITE);
 
@@ -698,7 +755,7 @@ public class PeriodicPage
 			}
 		});
 
-		// Create button: stop
+		// Button: stop
 		stopButton = Buttons.hExpansive(STOP_STR);
 		stopButton.setPadding(BUTTON_PADDING);
 		stopButton.setOnAction(event ->
@@ -720,22 +777,6 @@ public class PeriodicPage
 			enableExternalControls.invoke(true);
 		});
 
-		// Create button pane
-		TilePane buttonPane = new TilePane(BUTTON_PANE_H_GAP, BUTTON_PANE_V_GAP, startButton, stopButton);
-		buttonPane.setPrefColumns(buttonPane.getChildren().size());
-		buttonPane.setAlignment(Pos.CENTER_RIGHT);
-		buttonPane.setPadding(BUTTON_PANE_PADDING);
-
-		// Create top pane
-		HBox topPane = new HBox(4.0, controlPane, statusPane);
-		VBox.setVgrow(topPane, Priority.ALWAYS);
-//		topPane.setAlignment(Pos.TOP_CENTER);
-
-		// Create outer pane
-		pane = new VBox(4.0, topPane, buttonPane);
-		pane.setAlignment(Pos.TOP_CENTER);
-		pane.getStyleClass().add(StyleClass.PERIODIC_PAGE);
-
 		// Update UI components when content of key field changes
 		keyField.textProperty().addListener(observable -> updateComponents.invoke());
 
@@ -748,21 +789,21 @@ public class PeriodicPage
 
 	//------------------------------------------------------------------
 
-	private void updateStatus()
+	private void updateTime()
 	{
-		// Update status label
-		statusLabel.setText(((timer == null) || (keyPressTime == null))
+		// Update time label
+		timeLabel.setText(((timer == null) || (keyPressTime == null))
 												? " "
 												: TIME_FORMATTER.format(keyPressTime));
 		boolean timerRunning = (timer != null) && (timer.getStatus() == Animation.Status.RUNNING);
-		String colourKey = timerRunning ? ColourKey.STATUS_LABEL_TEXT_HIGHLIGHTED : ColourKey.STATUS_LABEL_TEXT;
-		statusLabel.setTextFill(getColour(colourKey));
-		statusLabel.pseudoClassStateChanged(HIGHLIGHTED_PSEUDO_CLASS, timerRunning);
+		String colourKey = timerRunning ? ColourKey.TIME_LABEL_TEXT_HIGHLIGHTED : ColourKey.TIME_LABEL_TEXT;
+		timeLabel.setTextFill(getColour(colourKey));
+		timeLabel.pseudoClassStateChanged(HIGHLIGHTED_PSEUDO_CLASS, timerRunning);
 
-		// Update status pane
-		colourKey = timerRunning ? ColourKey.STATUS_PANE_BACKGROUND_HIGHLIGHTED : ColourKey.STATUS_PANE_BACKGROUND;
-		statusPane.setBackground(SceneUtils.createColouredBackground(getColour(colourKey)));
-		statusPane.pseudoClassStateChanged(HIGHLIGHTED_PSEUDO_CLASS, timerRunning);
+		// Update time pane
+		colourKey = timerRunning ? ColourKey.TIME_PANE_BACKGROUND_HIGHLIGHTED : ColourKey.TIME_PANE_BACKGROUND;
+		timePane.setBackground(SceneUtils.createColouredBackground(getColour(colourKey)));
+		timePane.pseudoClassStateChanged(HIGHLIGHTED_PSEUDO_CLASS, timerRunning);
 	}
 
 	//------------------------------------------------------------------
@@ -812,6 +853,42 @@ public class PeriodicPage
 		public String toString()
 		{
 			return text;
+		}
+
+		//--------------------------------------------------------------
+
+	}
+
+	//==================================================================
+
+
+	// ENUMERATION: HORIZONTAL POSITION OF TIME PANE
+
+
+	private enum TimePanePos
+	{
+
+	////////////////////////////////////////////////////////////////////
+	//  Constants
+	////////////////////////////////////////////////////////////////////
+
+		LEFT,
+		RIGHT;
+
+	////////////////////////////////////////////////////////////////////
+	//  Instance variables
+	////////////////////////////////////////////////////////////////////
+
+		private	String	key;
+
+	////////////////////////////////////////////////////////////////////
+	//  Constructors
+	////////////////////////////////////////////////////////////////////
+
+		private TimePanePos()
+		{
+			// Initialise instance variables
+			key = name().toLowerCase();
 		}
 
 		//--------------------------------------------------------------
@@ -877,13 +954,16 @@ public class PeriodicPage
 	//  Constants
 	////////////////////////////////////////////////////////////////////
 
+		private static final	TimePanePos	DEFAULT_TIME_PANE_POS	= TimePanePos.RIGHT;
+
 		/** Keys of properties. */
 		private interface PropertyKey
 		{
-			String	INTERVAL	= "interval";
-			String	KEY			= "key";
-			String	UNIT		= "unit";
-			String	VALUE		= "value";
+			String	INTERVAL			= "interval";
+			String	KEY					= "key";
+			String	TIME_PANE_POSITION	= "timePanePosition";
+			String	UNIT				= "unit";
+			String	VALUE				= "value";
 		}
 
 	////////////////////////////////////////////////////////////////////
@@ -893,6 +973,7 @@ public class PeriodicPage
 		private KeyInfo		keyInfo;
 		private int			intervalValue;
 		private TimeUnit	intervalUnit;
+		private	TimePanePos	timePanePos;
 
 	////////////////////////////////////////////////////////////////////
 	//  Constructors
@@ -903,6 +984,7 @@ public class PeriodicPage
 			// Initialise instance variables
 			intervalValue = DEFAULT_INTERVAL_VALUE;
 			intervalUnit = DEFAULT_INTERVAL_UNIT;
+			timePanePos = DEFAULT_TIME_PANE_POS;
 		}
 
 		//--------------------------------------------------------------
@@ -911,7 +993,7 @@ public class PeriodicPage
 	//  Instance methods
 	////////////////////////////////////////////////////////////////////
 
-		private MapNode encodeTree()
+		private MapNode encode()
 		{
 			// Create root node
 			MapNode rootNode = new MapNode();
@@ -925,13 +1007,16 @@ public class PeriodicPage
 			intervalNode.addInt(PropertyKey.VALUE, intervalValue);
 			intervalNode.addString(PropertyKey.UNIT, intervalUnit.key);
 
+			// Encode position of time pane
+			rootNode.addString(PropertyKey.TIME_PANE_POSITION, timePanePos.key);
+
 			// Return root node
 			return rootNode;
 		}
 
 		//--------------------------------------------------------------
 
-		private void decodeTree(
+		private void decode(
 			MapNode	rootNode)
 		{
 			// Decode key
@@ -952,6 +1037,10 @@ public class PeriodicPage
 					intervalUnit = unit;
 				}
 			}
+
+			// Decode position of time pane
+			timePanePos = rootNode.getEnumValue(TimePanePos.class, PropertyKey.TIME_PANE_POSITION, pos -> pos.key,
+												DEFAULT_TIME_PANE_POS);
 		}
 
 		//--------------------------------------------------------------

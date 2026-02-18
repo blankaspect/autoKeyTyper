@@ -47,7 +47,7 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
-import javafx.scene.layout.TilePane;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 
 import javafx.scene.paint.Color;
@@ -129,14 +129,8 @@ public class DelayedPage
 	/** The padding around the control pane. */
 	private static final	Insets	CONTROL_PANE_PADDING	= new Insets(8.0, 8.0, 8.0, 12.0);
 
-	/** The horizontal gap between adjacent buttons of the button pane. */
-	private static final	double	BUTTON_PANE_H_GAP	= 12.0;
-
-	/** The vertical gap between adjacent buttons of the button pane. */
-	private static final	double	BUTTON_PANE_V_GAP	= 6.0;
-
-	/** The padding around the button pane. */
-	private static final	Insets	BUTTON_PANE_PADDING	= new Insets(4.0, 6.0, 0.0, 6.0);
+	/** The padding around a command button. */
+	private static final	Insets	BUTTON_PADDING	= new Insets(4.0, 10.0, 4.0, 10.0);
 
 	/** Miscellaneous strings. */
 	private static final	String	INPUT_STR		= "Input";
@@ -240,14 +234,14 @@ public class DelayedPage
 	/** The <i>delay</i> spinner. */
 	private	IntRangeSpinner	delaySpinner;
 
-	/** The <i>abort</i> button. */
-	private	Button			abortButton;
-
 	/** The <i>generate</i> button. */
 	private	Button			generateButton;
 
+	/** The <i>abort</i> button. */
+	private	Button			abortButton;
+
 	/** The outer pane of this page. */
-	private	VBox			pane;
+	private	StackPane		pane;
 
 	/** The timer that provides a delay of the chosen length when generating key events. */
 	private	Timeline		timer;
@@ -258,8 +252,9 @@ public class DelayedPage
 
 	static
 	{
-		// Register the style properties of this class with the style manager
-		StyleManager.INSTANCE.register(DelayedPage.class, COLOUR_PROPERTIES, RULE_SETS);
+		// Register the style properties of this class and its dependencies with the style manager
+		StyleManager.INSTANCE.register(DelayedPage.class, COLOUR_PROPERTIES, RULE_SETS,
+									   PaneStyle.class);
 	}
 
 ////////////////////////////////////////////////////////////////////////
@@ -301,9 +296,17 @@ public class DelayedPage
 ////////////////////////////////////////////////////////////////////////
 
 	@Override
-	public VBox pane()
+	public StackPane pane()
 	{
 		return pane;
+	}
+
+	//------------------------------------------------------------------
+
+	@Override
+	public List<Button> buttons()
+	{
+		return List.of(generateButton, abortButton);
 	}
 
 	//------------------------------------------------------------------
@@ -315,7 +318,7 @@ public class DelayedPage
 		state.delay = delaySpinner.value();
 
 		// Encode state and return result
-		return state.encodeTree();
+		return state.encode();
 	}
 
 	//------------------------------------------------------------------
@@ -324,7 +327,7 @@ public class DelayedPage
 	public void decodeState(
 		MapNode	rootNode)
 	{
-		state.decodeTree(rootNode);
+		state.decode(rootNode);
 	}
 
 	//------------------------------------------------------------------
@@ -400,6 +403,7 @@ public class DelayedPage
 		IFunction0<TextField> singleCharFieldFactory = () ->
 		{
 			TextField field = new TextField();
+			field.setFont(Fonts.monoFont());
 			field.setPrefColumnCount(2);
 			field.setTextFormatter(new TextFormatter<>(FilterFactory.lengthLimiter(1)));
 			return field;
@@ -440,39 +444,23 @@ public class DelayedPage
 		delayPane.setAlignment(Pos.CENTER_LEFT);
 		controlPane.addRow(row++, new Label(DELAY_STR), delayPane);
 
+		// Create outer pane
+		pane = new StackPane(controlPane);
+		pane.getStyleClass().add(StyleClass.DELAYED_PAGE);
+
 		// Create procedure to update buttons
 		IProcedure0 updateButtons = () ->
 		{
 			boolean timerRunning = (timer != null);
 			boolean noInput = inputField.getText().isEmpty();
 			clearInputButton.setDisable(timerRunning || noInput);
-			abortButton.setDisable(!timerRunning);
 			generateButton.setDisable(timerRunning || noInput);
+			abortButton.setDisable(!timerRunning);
 		};
-
-		// Create button: abort
-		abortButton = Buttons.hExpansive(ABORT_STR);
-		abortButton.setOnAction(event ->
-		{
-			// Stop delay timer and invalidate it
-			if (timer != null)
-			{
-				// Stop delay timer
-				timer.stop();
-
-				// Invalidate delay timer
-				timer = null;
-			}
-
-			// Update buttons
-			updateButtons.invoke();
-
-			// Enable external controls
-			enableExternalControls.invoke(true);
-		});
 
 		// Create button: generate
 		generateButton = Buttons.hExpansive(GENERATE_STR);
+		generateButton.setPadding(BUTTON_PADDING);
 		generateButton.setOnAction(event ->
 		{
 			// Get text from input field
@@ -560,22 +548,33 @@ public class DelayedPage
 			}
 		});
 
+		// Create button: abort
+		abortButton = Buttons.hExpansive(ABORT_STR);
+		abortButton.setPadding(BUTTON_PADDING);
+		abortButton.setOnAction(event ->
+		{
+			// Stop delay timer and invalidate it
+			if (timer != null)
+			{
+				// Stop delay timer
+				timer.stop();
+
+				// Invalidate delay timer
+				timer = null;
+			}
+
+			// Update buttons
+			updateButtons.invoke();
+
+			// Enable external controls
+			enableExternalControls.invoke(true);
+		});
+
 		// Update buttons when content of input field changes
 		inputField.textProperty().addListener(observable -> updateButtons.invoke());
 
 		// Update buttons
 		updateButtons.invoke();
-
-		// Create button pane
-		TilePane buttonPane = new TilePane(BUTTON_PANE_H_GAP, BUTTON_PANE_V_GAP, abortButton, generateButton);
-		buttonPane.setPrefColumns(buttonPane.getChildren().size());
-		buttonPane.setAlignment(Pos.CENTER_RIGHT);
-		buttonPane.setPadding(BUTTON_PANE_PADDING);
-
-		// Create outer pane
-		pane = new VBox(4.0, controlPane, buttonPane);
-		pane.setAlignment(Pos.CENTER);
-		pane.getStyleClass().add(StyleClass.DELAYED_PAGE);
 	}
 
 	//------------------------------------------------------------------
@@ -623,7 +622,7 @@ public class DelayedPage
 	//  Instance methods
 	////////////////////////////////////////////////////////////////////
 
-		private MapNode encodeTree()
+		private MapNode encode()
 		{
 			// Create root node
 			MapNode rootNode = new MapNode();
@@ -637,7 +636,7 @@ public class DelayedPage
 
 		//--------------------------------------------------------------
 
-		private void decodeTree(
+		private void decode(
 			MapNode	rootNode)
 		{
 			// Decode delay
