@@ -69,7 +69,7 @@ public class PreferencesPage
 	private static final	Insets	CONTROL_PANE_PADDING	= new Insets(12.0, 20.0, 12.0, 20.0);
 
 	/** Miscellaneous strings. */
-	private static final	String	THEME_STR	= "Theme";
+	private static final	String	COLOUR_SCHEME_STR	= "Colour scheme";
 
 	/** CSS colour properties. */
 	private static final	List<ColourProperty>	COLOUR_PROPERTIES	= List.of
@@ -206,7 +206,7 @@ public class PreferencesPage
 		});
 
 		// Create control pane
-		HBox controlPane = new HBox(CONTROL_H_GAP, Labels.hNoShrink(THEME_STR), themeSpinner);
+		HBox controlPane = new HBox(CONTROL_H_GAP, Labels.hNoShrink(COLOUR_SCHEME_STR), themeSpinner);
 		controlPane.setAlignment(Pos.CENTER);
 		controlPane.setPadding(CONTROL_PANE_PADDING);
 		controlPane.setBorder(SceneUtils.createSolidBorder(getColour(PaneStyle.ColourKey.PANE_BORDER)));
