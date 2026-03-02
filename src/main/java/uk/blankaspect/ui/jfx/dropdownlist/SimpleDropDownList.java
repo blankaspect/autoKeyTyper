@@ -160,6 +160,15 @@ public class SimpleDropDownList<T>
 		),
 		ColourProperty.of
 		(
+			FxProperty.FILL,
+			ColourKey.LIST_BUTTON_ICON,
+			CssSelector.builder()
+					.cls(StyleClass.SIMPLE_DROP_DOWN_LIST)
+					.desc(StyleClass.LIST_BUTTON_ICON)
+					.build()
+		),
+		ColourProperty.of
+		(
 			FxProperty.BORDER_COLOUR,
 			ColourKey.LIST_BUTTON_PANE_BORDER,
 			CssSelector.builder()
@@ -210,6 +219,7 @@ public class SimpleDropDownList<T>
 		String	SIMPLE_DROP_DOWN_LIST	= StyleConstants.CLASS_PREFIX + "simple-drop-down-list";
 
 		String	LABEL				= SIMPLE_DROP_DOWN_LIST + "-label";
+		String	LIST_BUTTON_ICON	= StyleConstants.CLASS_PREFIX + "list-button-icon";
 		String	LIST_BUTTON_PANE	= StyleConstants.CLASS_PREFIX + "list-button-pane";
 		String	LIST_VIEW			= SIMPLE_DROP_DOWN_LIST + "-list-view";
 		String	LIST_VIEW_TICK		= SIMPLE_DROP_DOWN_LIST + "-list-view-tick";
@@ -348,7 +358,7 @@ public class SimpleDropDownList<T>
 			// Return cell
 			return cell;
 		});
-		listView.getStyleClass().add(StyleClass.LIST_VIEW);
+		listView.getStyleClass().addAll(StyleClass.LIST_VIEW, ListViewStyle.StyleClass.LIST_VIEW);
 		listView.prefWidthProperty().bind(widthProperty());
 
 		// Create procedure to update value of combo box from selection in list view
@@ -389,15 +399,15 @@ public class SimpleDropDownList<T>
 		// character
 		listView.setOnKeyTyped(event ->
 		{
-			String charStr = event.getCharacter();
-			if (!KeyEvent.CHAR_UNDEFINED.equals(charStr))
+			String str = event.getCharacter();
+			if (!KeyEvent.CHAR_UNDEFINED.equals(str))
 			{
-				charStr = charStr.toLowerCase();
+				str = str.toLowerCase();
 				List<String> listViewItems = listView.getItems();
 				int numItems = listViewItems.size();
 				for (int i = 0; i < numItems; i++)
 				{
-					if (listViewItems.get(i).toLowerCase().startsWith(charStr))
+					if (listViewItems.get(i).toLowerCase().startsWith(str))
 					{
 						listView.getSelectionModel().clearAndSelect(i);
 						if (numItems > LIST_VIEW_NUM_ROWS)
@@ -469,6 +479,7 @@ public class SimpleDropDownList<T>
 		double textHeight = TextUtils.textHeight();
 		Shape buttonIcon = Shapes.arrowhead01(VHDirection.DOWN, BUTTON_ICON_SIZE_FACTOR * textHeight);
 		buttonIcon.setFill(getColour(ColourKey.LIST_BUTTON_ICON));
+		buttonIcon.getStyleClass().add(StyleClass.LIST_BUTTON_ICON);
 
 		// Create button that triggers list view
 		button = new GraphicButton(Shapes.tile(buttonIcon, Math.ceil(textHeight)));
