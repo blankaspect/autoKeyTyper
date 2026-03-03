@@ -96,6 +96,7 @@ import uk.blankaspect.ui.jfx.spinner.CollectionSpinner;
 import uk.blankaspect.ui.jfx.style.StyleConstants;
 import uk.blankaspect.ui.jfx.style.StyleManager;
 
+import uk.blankaspect.ui.jfx.window.WindowDims;
 import uk.blankaspect.ui.jfx.window.WindowState;
 
 //----------------------------------------------------------------------
@@ -561,12 +562,17 @@ public class AutoKeyTyperApp
 		// When main window is shown, set its width and location after a delay
 		primaryStage.setOnShown(event ->
 		{
+			// Get dimensions of window
+			WindowDims dims = new WindowDims(primaryStage);
+
 			// Set width of main window after a delay
 			ExecUtils.afterDelay(getDelay(SystemPropertyKey.MAIN_WINDOW_DELAY_SIZE), () ->
 			{
+				// Update dimensions
+				dims.update(false);
+
 				// Set minimum dimensions of window
-				primaryStage.setMinWidth(primaryStage.getWidth());
-				primaryStage.setMinHeight(primaryStage.getHeight());
+				dims.setMin();
 
 				// Get size of window from saved state
 				Dimension2D size = mainWindowState.getSize();
