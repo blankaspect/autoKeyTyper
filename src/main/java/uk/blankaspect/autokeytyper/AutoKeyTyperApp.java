@@ -561,12 +561,13 @@ public class AutoKeyTyperApp
 		// When main window is shown, set its width and location after a delay
 		primaryStage.setOnShown(event ->
 		{
-			// Get preferred width
-			double prefWidth = primaryStage.getWidth();
-
 			// Set width of main window after a delay
 			ExecUtils.afterDelay(getDelay(SystemPropertyKey.MAIN_WINDOW_DELAY_SIZE), () ->
 			{
+				// Set minimum dimensions of window
+				primaryStage.setMinWidth(primaryStage.getWidth());
+				primaryStage.setMinHeight(primaryStage.getHeight());
+
 				// Get size of window from saved state
 				Dimension2D size = mainWindowState.getSize();
 
@@ -600,16 +601,11 @@ public class AutoKeyTyperApp
 					// Perform remaining initialisation after a delay
 					ExecUtils.afterDelay(getDelay(SystemPropertyKey.MAIN_WINDOW_DELAY_OPACITY), () ->
 					{
+						// Prevent height of window from changing
+						primaryStage.setMaxHeight(primaryStage.getHeight());
+
 						// Make window visible
 						primaryStage.setOpacity(1.0);
-
-						// Set lower bound on width of window
-						primaryStage.setMinWidth(prefWidth);
-
-						// Prevent height of window from changing
-						double height = primaryStage.getHeight();
-						primaryStage.setMinHeight(height);
-						primaryStage.setMaxHeight(height);
 
 						// Report any configuration error
 						if (vars.configException != null)
