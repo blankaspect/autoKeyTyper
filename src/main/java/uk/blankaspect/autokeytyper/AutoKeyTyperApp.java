@@ -157,6 +157,9 @@ public class AutoKeyTyperApp
 		SystemPropertyKey.MAIN_WINDOW_DELAY_OPACITY,  25
 	);
 
+	/** The minimum width of the main window. */
+	private static final	double	MAIN_WINDOW_MIN_WIDTH	= 120.0;
+
 	/** The margins that are applied to the visual bounds of each screen when determining whether the saved location of
 		the main window is within a screen. */
 	private static final	Insets	SCREEN_MARGINS	= new Insets(0.0, 32.0, 32.0, 0.0);
@@ -572,7 +575,7 @@ public class AutoKeyTyperApp
 				dims.update(false);
 
 				// Set minimum dimensions of window
-				dims.setMin();
+				dims.setMin(MAIN_WINDOW_MIN_WIDTH, 0.0);
 
 				// Get size of window from saved state
 				Dimension2D size = mainWindowState.getSize();
@@ -580,8 +583,17 @@ public class AutoKeyTyperApp
 				// Set width of window
 				if (size != null)
 				{
-					primaryStage.setWidth(size.getWidth());
-					primaryStage.setHeight(primaryStage.getHeight());	// required for Linux/GNOME
+					// Set width
+					double width = size.getWidth();
+					if (width <= 0.0)
+						width = Math.max(MAIN_WINDOW_MIN_WIDTH, dims.w());
+					primaryStage.setMinWidth(width);
+					primaryStage.setWidth(width);
+
+					// Set height (required for Linux/GNOME)
+					double height = primaryStage.getHeight();
+					primaryStage.setMinHeight(height);
+					primaryStage.setHeight(height);
 				}
 
 				// Set location of main window after a delay
@@ -607,8 +619,13 @@ public class AutoKeyTyperApp
 					// Perform remaining initialisation after a delay
 					ExecUtils.afterDelay(getDelay(SystemPropertyKey.MAIN_WINDOW_DELAY_OPACITY), () ->
 					{
+						// Set minimum width of window
+						primaryStage.setMinWidth(MAIN_WINDOW_MIN_WIDTH);
+
 						// Prevent height of window from changing
-						primaryStage.setMaxHeight(primaryStage.getHeight());
+						double height = primaryStage.getHeight();
+						primaryStage.setMinHeight(height);
+						primaryStage.setMaxHeight(height);
 
 						// Make window visible
 						primaryStage.setOpacity(1.0);
