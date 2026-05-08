@@ -175,7 +175,7 @@ public class PeriodicPage
 	private static final	String	RIGHT_STR		= "right";
 
 	/** The pseudo-class that is associated with the <i>highlighted</i> state. */
-	private static final	PseudoClass	HIGHLIGHTED_PSEUDO_CLASS	=
+	private static final	PseudoClass	PSEUDO_CLASS_HIGHLIGHTED	=
 			PseudoClass.getPseudoClass(PseudoClassKey.HIGHLIGHTED);
 
 	/** CSS colour properties. */
@@ -798,12 +798,12 @@ public class PeriodicPage
 		boolean timerRunning = (timer != null) && (timer.getStatus() == Animation.Status.RUNNING);
 		String colourKey = timerRunning ? ColourKey.TIME_LABEL_TEXT_HIGHLIGHTED : ColourKey.TIME_LABEL_TEXT;
 		timeLabel.setTextFill(getColour(colourKey));
-		timeLabel.pseudoClassStateChanged(HIGHLIGHTED_PSEUDO_CLASS, timerRunning);
+		timeLabel.pseudoClassStateChanged(PSEUDO_CLASS_HIGHLIGHTED, timerRunning);
 
 		// Update time pane
 		colourKey = timerRunning ? ColourKey.TIME_PANE_BACKGROUND_HIGHLIGHTED : ColourKey.TIME_PANE_BACKGROUND;
 		timePane.setBackground(SceneUtils.createColouredBackground(getColour(colourKey)));
-		timePane.pseudoClassStateChanged(HIGHLIGHTED_PSEUDO_CLASS, timerRunning);
+		timePane.pseudoClassStateChanged(PSEUDO_CLASS_HIGHLIGHTED, timerRunning);
 	}
 
 	//------------------------------------------------------------------
