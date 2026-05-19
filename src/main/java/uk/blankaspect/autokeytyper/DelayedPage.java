@@ -29,8 +29,6 @@ import java.util.Map;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 
-import javafx.application.Platform;
-
 import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -386,11 +384,8 @@ public class DelayedPage
 		GraphicButton clearInputButton = new GraphicButton(clearIcon, CLEAR_INPUT_STR);
 		clearInputButton.setOnAction(event ->
 		{
-			Platform.runLater(() ->
-			{
-				inputField.clear();
-				inputField.requestFocus();
-			});
+			inputField.requestFocus();
+			inputField.clear();
 		});
 
 		// Pane: input

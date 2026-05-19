@@ -596,10 +596,10 @@ public class PeriodicPage
 		GraphicButton clearKeyButton = new GraphicButton(clearIcon, CLEAR_KEY_STR);
 		clearKeyButton.setOnAction(event ->
 		{
+			if (keyField.isEditable())
+				keyField.requestFocus();
 			keyInfo = null;
 			keyField.clear();
-			if (keyField.isEditable())
-				Platform.runLater(() -> keyField.requestFocus());
 		});
 
 		// Pane: key
