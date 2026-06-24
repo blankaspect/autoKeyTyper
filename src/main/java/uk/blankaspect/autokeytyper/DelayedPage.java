@@ -148,19 +148,19 @@ public class DelayedPage
 		ColourProperty.of
 		(
 			FxProperty.FILL,
-			ColourKey.CLEAR_INPUT_BUTTON_DISC,
+			ColourKey.CLEAR_INPUT_BUTTON_BACKGROUND,
 			CssSelector.builder()
 					.cls(StyleClass.DELAYED_PAGE)
-					.desc(Icons.StyleClass.CLEAR01_DISC)
+					.desc(Icons.StyleClass.CLEAR02_BACKGROUND)
 					.build()
 		),
 		ColourProperty.of
 		(
 			FxProperty.STROKE,
-			ColourKey.CLEAR_INPUT_BUTTON_CROSS,
+			ColourKey.CLEAR_INPUT_BUTTON_FOREGROUND,
 			CssSelector.builder()
 					.cls(StyleClass.DELAYED_PAGE)
-					.desc(Icons.StyleClass.CLEAR01_CROSS)
+					.desc(Icons.StyleClass.CLEAR02_FOREGROUND)
 					.build()
 		),
 		ColourProperty.of
@@ -210,9 +210,9 @@ public class DelayedPage
 	{
 		String	PREFIX	= StyleManager.colourKeyPrefix(MethodHandles.lookup().lookupClass().getEnclosingClass());
 
-		String	ALIAS_KEY_TEXT				= PREFIX + "aliasKeyText";
-		String	CLEAR_INPUT_BUTTON_CROSS	= PREFIX + "clearInputButton.cross";
-		String	CLEAR_INPUT_BUTTON_DISC		= PREFIX + "clearInputButton.disc";
+		String	ALIAS_KEY_TEXT					= PREFIX + "aliasKeyText";
+		String	CLEAR_INPUT_BUTTON_BACKGROUND	= PREFIX + "clearInputButton.background";
+		String	CLEAR_INPUT_BUTTON_FOREGROUND	= PREFIX + "clearInputButton.foreground";
 	}
 
 	/** Error messages. */
@@ -379,8 +379,8 @@ public class DelayedPage
 		HBox.setHgrow(inputField, Priority.ALWAYS);
 
 		// Button: clear input
-		Group clearIcon = Icons.clear01(getColour(ColourKey.CLEAR_INPUT_BUTTON_DISC),
-										getColour(ColourKey.CLEAR_INPUT_BUTTON_CROSS));
+		Group clearIcon = Icons.clear02(getColour(ColourKey.CLEAR_INPUT_BUTTON_BACKGROUND),
+										getColour(ColourKey.CLEAR_INPUT_BUTTON_FOREGROUND));
 		GraphicButton clearInputButton = new GraphicButton(clearIcon, CLEAR_INPUT_STR);
 		clearInputButton.setOnAction(event ->
 		{
@@ -389,7 +389,7 @@ public class DelayedPage
 		});
 
 		// Pane: input
-		HBox inputPane = new HBox(4.0, inputField, clearInputButton);
+		HBox inputPane = new HBox(2.0, inputField, clearInputButton);
 		inputPane.setAlignment(Pos.CENTER_LEFT);
 		controlPane.addRow(row++, new Label(INPUT_STR), inputPane);
 		GridPane.setHgrow(inputPane, Priority.ALWAYS);

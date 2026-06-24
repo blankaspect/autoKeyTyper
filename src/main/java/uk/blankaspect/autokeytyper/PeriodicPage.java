@@ -184,19 +184,19 @@ public class PeriodicPage
 		ColourProperty.of
 		(
 			FxProperty.FILL,
-			ColourKey.CLEAR_KEY_BUTTON_DISC,
+			ColourKey.CLEAR_KEY_BUTTON_BACKGROUND,
 			CssSelector.builder()
 					.cls(StyleClass.PERIODIC_PAGE)
-					.desc(Icons.StyleClass.CLEAR01_DISC)
+					.desc(Icons.StyleClass.CLEAR02_BACKGROUND)
 					.build()
 		),
 		ColourProperty.of
 		(
 			FxProperty.STROKE,
-			ColourKey.CLEAR_KEY_BUTTON_CROSS,
+			ColourKey.CLEAR_KEY_BUTTON_FOREGROUND,
 			CssSelector.builder()
 					.cls(StyleClass.PERIODIC_PAGE)
-					.desc(Icons.StyleClass.CLEAR01_CROSS)
+					.desc(Icons.StyleClass.CLEAR02_FOREGROUND)
 					.build()
 		),
 		ColourProperty.of
@@ -288,8 +288,8 @@ public class PeriodicPage
 	{
 		String	PREFIX	= StyleManager.colourKeyPrefix(MethodHandles.lookup().lookupClass().getEnclosingClass());
 
-		String	CLEAR_KEY_BUTTON_CROSS				= PREFIX + "clearKeyButton.cross";
-		String	CLEAR_KEY_BUTTON_DISC				= PREFIX + "clearKeyButton.disc";
+		String	CLEAR_KEY_BUTTON_BACKGROUND			= PREFIX + "clearKeyButton.background";
+		String	CLEAR_KEY_BUTTON_FOREGROUND			= PREFIX + "clearKeyButton.foreground";
 		String	TIME_LABEL_TEXT						= PREFIX + "timeLabel.text";
 		String	TIME_LABEL_TEXT_HIGHLIGHTED			= PREFIX + "timeLabel.text.highlighted";
 		String	TIME_PANE_BACKGROUND				= PREFIX + "timePane.background";
@@ -573,7 +573,6 @@ public class PeriodicPage
 			if (!keyField.isEditable())
 				event.consume();
 		});
-		HBox.setMargin(keyField, new Insets(0.0, 2.0, 0.0, 0.0));
 
 		// Create procedure to update key field
 		IProcedure0 updateKeyField = () ->
@@ -585,14 +584,9 @@ public class PeriodicPage
 				keyField.requestFocus();
 		};
 
-		// Button: edit key
-		editKeyButton = new ImageDataButton(Images.ImageId.PENCIL, EDIT_KEY_STR);
-		editKeyButton.setSelectable(true);
-		editKeyButton.selectedProperty().addListener(observable -> updateKeyField.invoke());
-
 		// Button: clear key
-		Group clearIcon = Icons.clear01(getColour(ColourKey.CLEAR_KEY_BUTTON_DISC),
-										getColour(ColourKey.CLEAR_KEY_BUTTON_CROSS));
+		Group clearIcon = Icons.clear02(getColour(ColourKey.CLEAR_KEY_BUTTON_BACKGROUND),
+										getColour(ColourKey.CLEAR_KEY_BUTTON_FOREGROUND));
 		GraphicButton clearKeyButton = new GraphicButton(clearIcon, CLEAR_KEY_STR);
 		clearKeyButton.setOnAction(event ->
 		{
@@ -602,8 +596,13 @@ public class PeriodicPage
 			keyField.clear();
 		});
 
+		// Button: edit key
+		editKeyButton = new ImageDataButton(Images.ImageId.PENCIL, EDIT_KEY_STR);
+		editKeyButton.setSelectable(true);
+		editKeyButton.selectedProperty().addListener(observable -> updateKeyField.invoke());
+
 		// Pane: key
-		HBox keyPane = new HBox(2.0, keyField, editKeyButton, clearKeyButton);
+		HBox keyPane = new HBox(2.0, keyField, clearKeyButton, editKeyButton);
 		keyPane.setAlignment(Pos.CENTER_LEFT);
 		controlPane.addRow(row++, new Label(KEY_STR), keyPane);
 
